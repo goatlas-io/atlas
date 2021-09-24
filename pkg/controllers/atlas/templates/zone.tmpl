@@ -1,0 +1,12 @@
+$ORIGIN atlas.
+@	3600 IN	SOA ns.atlas. postmaster.atlas. (
+				{{ .Serial }} ; serial
+				7200       ; refresh (2 hours)
+				3600       ; retry (1 hour)
+				1209600    ; expire (2 weeks)
+				3600       ; minimum (1 hour)
+				)
+
+{{ range .Records }}
+{{ . }}{{ end }}
+

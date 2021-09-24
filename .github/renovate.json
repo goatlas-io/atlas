@@ -1,0 +1,25 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": [
+        "go"
+      ],
+      "groupName": "kubernetes deps",
+      "groupSlug": "kubernetes",
+      "matchPackagePatterns": [
+        "^k8s.io/"
+      ]
+    },
+    {
+      "matchDatasources": [
+        "go"
+      ],
+      "matchPackagePatterns": [
+        "^github.com/aws/aws-sdk-go-v2/.*"
+      ]
+    }
+  ]
+}

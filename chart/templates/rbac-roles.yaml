@@ -1,0 +1,137 @@
+{{- if .Values.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.fullname" . }}-core
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+rules:
+- nonResourceURLs: ["/", "/healthz", "/healthz/*"]
+  verbs:
+    - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.fullname" . }}-controller
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - pods
+    - events
+    - namespaces
+    - configmaps
+    - secrets
+    - services
+    - serviceaccounts
+    - endpoints
+    - persistentvolumeclaims
+  verbs:
+    - "*"
+- apiGroups:
+    - coordination.k8s.io
+  resources:
+    - leases
+  verbs:
+    - list
+    - get
+    - watch
+    - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.fullname" . }}-api-server
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - services
+  verbs:
+    - list
+    - watch
+    - get
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - list
+    - watch
+    - get
+    - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.fullname" . }}-envoy-ads
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - services
+    - secrets
+  verbs:
+    - get
+    - list
+    - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "app.fullname" . }}-envoy-ads-secrets
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
+    - ""
+  resources:
+    - configmaps
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+- apiGroups:
+    - ""
+  resources:
+    - configmaps
+  verbs:
+    - update
+    - delete
+    - patch
+  resourceNames:
+    - "atlas-envoy-ads"
+
+{{- end }}

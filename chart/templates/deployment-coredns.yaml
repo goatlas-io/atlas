@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}-coredns
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: {{ include "app.name" . }}
+      release: {{ .Release.Name }}
+      component: coredns
+  template:
+    metadata:
+      labels:
+        app: {{ include "app.name" . }}
+        release: {{ .Release.Name }}
+        component: coredns
+    spec:
+      priorityClassName: system-cluster-critical
+      tolerations:
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+         podAntiAffinity:
+           preferredDuringSchedulingIgnoredDuringExecution:
+           - weight: 100
+             podAffinityTerm:
+               labelSelector:
+                 matchExpressions:
+                   - key: component
+                     operator: In
+                     values: ["coredns"]
+                   - key: release
+                     operator: In
+                     values: ["{{ .Release.Name }}"]
+               topologyKey: kubernetes.io/hostname
+      containers:
+      - name: coredns
+        image: coredns/coredns:1.8.4
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: 170Mi
+          requests:
+            cpu: 100m
+            memory: 70Mi
+        args: [ "-conf", "/etc/coredns/Corefile" ]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/coredns
+          readOnly: true
+        - name: zone-volume
+          mountPath: /etc/coredns-zones
+          readOnly: true
+        ports:
+        - containerPort: 53
+          name: dns
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        - containerPort: 9153
+          name: metrics
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - all
+          readOnlyRootFilesystem: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8181
+            scheme: HTTP
+      dnsPolicy: Default
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "app.fullname" . }}-coredns
+            items:
+            - key: Corefile
+              path: Corefile
+        - name: zone-volume
+          configMap:
+            name: {{ include "app.fullname" . }}-coredns
+            items:
+            - key: atlas.zone
+              path: atlas.zone
+

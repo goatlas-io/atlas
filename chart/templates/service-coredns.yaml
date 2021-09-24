@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "app.fullname" . }}-coredns
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  selector:
+    app: {{ include "app.name" . }}
+    release: {{ .Release.Name }}
+    component: coredns
+  clusterIP: {{ .Values.coredns.service.clusterIP }}
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+  - name: metrics
+    port: 9153
+    protocol: TCP

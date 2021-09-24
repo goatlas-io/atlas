@@ -1,0 +1,77 @@
+{{- if .Values.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "app.fullname" . }}-core
+  labels:
+    app: {{ include "app.name" .}}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "app.fullname" . }}-core
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "app.fullname" . }}-controller
+    namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: {{ include "app.fullname" . }}-envoy-ads
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "app.fullname" . }}-controller
+  labels:
+    app: {{ include "app.name" .}}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "app.fullname" . }}-controller
+subjects:
+- kind: ServiceAccount
+  name: {{ include "app.fullname" . }}-controller
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "app.fullname" . }}-envoy-ads
+  labels:
+    app: {{ include "app.name" .}}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "app.fullname" . }}-envoy-ads
+subjects:
+- kind: ServiceAccount
+  name: {{ include "app.fullname" . }}-envoy-ads
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "app.fullname" . }}-envoy-ads
+  labels:
+    app: {{ include "app.name" .}}
+    chart: {{ include "app.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "app.fullname" . }}-envoy-ads-secrets
+subjects:
+- kind: ServiceAccount
+  name: {{ include "app.fullname" . }}-envoy-ads
+  namespace: {{ .Release.Namespace }}
+{{- end }}

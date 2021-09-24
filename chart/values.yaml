@@ -1,0 +1,143 @@
+image:
+  repository: ghcr.io/ekristen/atlas
+  tag: v1.0.0
+  pullPolicy: IfNotPresent
+  pullSecret: ""
+
+# Controls whether or not to create the RBAC for the components deployed
+# by the helm chart, this should almost always be true, except for testing
+rbac:
+  create: true
+
+metrics:
+  enabled: true
+
+controller:
+  ports:
+    grpc: 6305
+  envoy:
+    host: envoy.atlas.local
+
+podAnnotations: {}
+affinity: {}
+resources: {}
+tolerations: {}
+
+coredns:
+  service:
+    clusterIP: 10.43.43.10
+
+envoyads:
+  enabled: true
+  ingress:
+    enabled: true
+  host: envoyads.atlas.local
+  metrics:
+    enabled: true
+  replicas: 1
+  affinity: {}
+  tolerations: {}
+  resources: {}
+  podAnnotations: {}
+  env: {}
+  envFromSecret: {}
+
+envoy:
+  replicaCount: 1
+  args:
+    - -l
+    - info
+    - -c
+    - /config/envoy.yaml
+  image:
+    repository: envoyproxy/envoy
+    tag: v1.18.3
+    pullPolicy: IfNotPresent
+  service:
+    enabled: true
+    ports:
+      ads:
+        port: 10900
+        targetPort: ads
+        protocol: TCP
+      thanos:
+        port: 10901
+        targetPort: thanos
+        protocol: TCP
+      alertmanagers:
+        port: 10903
+        targetPort: alertmanagers
+        protocol: TCP
+      prometheus:
+        port: 10904
+        targetPort: prometheus
+        protocol: TCP
+  ports:
+    admin:
+      containerPort: 9000
+      hostPort: 9000
+      protocol: TCP
+    ads:
+      containerPort: 10900
+      protocol: TCP
+      hostPort: 10900
+    thanos:
+      containerPort: 10901
+      protocol: TCP
+      # this doesn't need  to listen on the host, nor should it.
+      # hostPort: 10901
+    alertmanagers:
+      containerPort: 10903
+      protocol: TCP
+      hostPort: 10903
+    prometheus:
+      containerPort: 10904
+      protocol: TCP
+      # this doesn't need  to listen on the host, nor should it.
+      # hostPort: 10904
+  tolerations:
+    - key: ingress
+      operator: Exists
+      effect: NoSchedule
+  serviceMonitor:
+    enabled: true
+  templates:
+    envoy.yaml: |
+      node:
+        id: "atlas"
+        cluster: "atlas"
+      admin:
+        access_log_path: /dev/stdout
+        address:
+          socket_address:
+            address: 0.0.0.0
+            port_value: 9000
+      dynamic_resources:
+        ads_config:
+          api_type: GRPC
+          transport_api_version: V3
+          set_node_on_first_message_only: true
+          grpc_services:
+            - envoy_grpc:
+                cluster_name: xds_cluster
+        lds_config:
+          resource_api_version: V3
+          ads: {}
+        cds_config:
+          resource_api_version: V3
+          ads: {}
+      static_resources:
+        clusters:
+          - connect_timeout: 1s
+            http2_protocol_options: {}
+            name: xds_cluster
+            type: STRICT_DNS
+            load_assignment:
+              cluster_name: xds_cluster
+              endpoints:
+                - lb_endpoints:
+                    - endpoint:
+                        address:
+                          socket_address:
+                            address: atlas-atlas-envoy-ads.{{ .Release.Namespace }}.svc.cluster.local.
+                            port_value: 6305

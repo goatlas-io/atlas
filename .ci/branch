@@ -1,0 +1,20 @@
+#!/bin/bash
+
+DETECTED=$(git rev-parse --abbrev-ref HEAD)
+
+if [ -n "$BRANCH" ]; then
+    if [ "$BRANCH" != "$DETECTED" ]; then
+        echo "$DETECTED"
+        exit 0
+    fi
+    
+    echo "$BRANCH"
+    exit 0
+fi
+
+if [ -n "$GITHUB_REF" ]; then
+    echo "${GITHUB_REF#refs/heads/}"
+    exit 0
+fi
+
+echo "$DETECTED"

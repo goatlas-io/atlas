@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}-controller
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "app.name" . }}
+      release: {{ .Release.Name }}
+      component: controller
+  template:
+    metadata:
+      labels:
+        app: {{ include "app.name" . }}
+        release: {{ .Release.Name }}
+        component: controller
+{{- if or .Values.podAnnotations .Values.metrics.enabled }}
+      annotations:
+{{- end }}
+{{- with .Values.podAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if or .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6309"
+        prometheus.io/path: "/metrics"
+{{- end }}
+    spec:
+      serviceAccount: {{ include "app.fullname" . }}-controller
+      serviceAccountName: {{ include "app.fullname" . }}-controller
+      securityContext:
+        runAsUser: 65533
+        fsGroup: 65533
+{{- if ne .Values.image.pullSecret "" }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+{{- end }}
+{{- if or (.Values.affinity) (not .Values.affinity.podAntiAffinity)  }}
+      affinity:
+{{- end }}
+{{- if .Values.affinity }}
+{{ toYaml .Values.affinity | indent 8 }}
+{{- end }}
+{{- if not .Values.affinity.podAntiAffinity }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}
+              topologyKey: failure-domain.beta.kubernetes.io/zone
+{{- end }}
+{{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+{{- end }}
+      containers:
+      - name: controller
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args: 
+        - "controller"
+        env:
+          - name: ATLAS_ENVOY_ADS_ADDRESS
+            value: {{ .Values.envoyads.host }}
+          - name: ATLAS_ENVOY_ADDRESS
+            value: {{ .Values.controller.envoy.host }}
+{{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+{{- end }}

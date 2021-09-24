@@ -1,0 +1,14 @@
+# Directories
+vendor
+hack/deployment/**/*.json
+hack/deployment/**/*.yaml
+
+# Files
+.envrc
+kubeconfig.yaml
+test-*.yaml
+chart/charts/*.tgz
+droplet.json
+envoy-values.yaml
+archive
+helm-values.yaml

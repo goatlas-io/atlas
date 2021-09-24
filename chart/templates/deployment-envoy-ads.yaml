@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}-envoy-ads
+  labels:
+    app: {{ include "app.name" . }}
+    chart: {{ include "app.chart" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "app.name" . }}
+      release: {{ .Release.Name }}
+      component: envoy-ads
+  template:
+    metadata:
+      labels:
+        app: {{ include "app.name" . }}
+        release: {{ .Release.Name }}
+        component: envoy-ads
+{{- if or .Values.envoyads.podAnnotations .Values.envoyads.metrics.enabled }}
+      annotations:
+{{- end }}
+{{- with .Values.envoyads.podAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if or .Values.envoyads.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6309"
+        prometheus.io/path: "/metrics"
+{{- end }}
+    spec:
+      serviceAccount: {{ include "app.fullname" . }}-envoy-ads
+      serviceAccountName: {{ include "app.fullname" . }}-envoy-ads
+      securityContext:
+        runAsUser: 65533
+        fsGroup: 65533
+{{- if ne .Values.image.pullSecret "" }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+{{- end }}
+{{- if or (.Values.envoyads.affinity) (not .Values.envoyads.affinity.podAntiAffinity)  }}
+      affinity:
+{{- end }}
+{{- if .Values.envoyads.affinity }}
+{{ toYaml .Values.envoyads.affinity | indent 8 }}
+{{- end }}
+{{- if not .Values.envoyads.affinity.podAntiAffinity }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}
+              topologyKey: failure-domain.beta.kubernetes.io/zone
+{{- end }}
+{{- if .Values.envoyads.tolerations }}
+      tolerations:
+{{ toYaml .Values.envoyads.tolerations | indent 8 }}
+{{- end }}
+      containers:
+      - name: envoy-ads
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args: 
+        - "envoy-ads"
+        - "--grpc-port=6305"
+        env:
+          - name: ATLAS_ENVOY_ADDRESS
+            value: {{ .Values.controller.envoy.host }}
+{{- if .Values.envoyads.resources }}
+        resources:
+{{ toYaml .Values.envoyads.resources | indent 10 }}
+{{- end }}

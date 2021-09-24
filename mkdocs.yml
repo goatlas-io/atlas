@@ -1,0 +1,36 @@
+site_name: Atlas
+site_url: https://ekristen.github.io/atlas/
+repo_name: ekristen/atlas
+repo_url: https://github.com/ekristen/atlas
+edit_uri: ""
+
+site_dir: public
+
+theme:
+  name: material
+  language: en
+  palette:
+    scheme: preference
+    primary: blue
+    accent: indigo
+  features:
+    - navigation.sections
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+  - pymdownx.superfences:
+      highlight_code: true
+  - pymdownx.tabbed
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Quick Start: guides/quick-start.md
+      - Getting Started: guides/getting-started.md

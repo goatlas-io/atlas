@@ -1,0 +1,118 @@
+replicaCount: 1
+args:
+  - -l
+  - info
+  - -c
+  - /config/envoy.yaml
+image:
+  repository: envoyproxy/envoy
+  tag: v1.18.3
+  pullPolicy: IfNotPresent
+service:
+  enabled: true
+  ports:
+    thanos:
+      port: 11901
+      targetPort: thanos
+      protocol: TCP
+    alertmanager:
+      port: 11903
+      targetPort: alertmanager
+      protocol: TCP
+    prometheus:
+      port: 11904
+      targetPort: prometheus
+      protocol: TCP
+ports:
+  admin:
+    containerPort: 9000
+    hostPort: 9000
+    protocol: TCP
+  thanos:
+    containerPort: 11901
+    protocol: TCP
+    hostPort: 11901
+  prometheus:
+    containerPort: 11904
+    protocol: TCP
+    hostPort: 11904
+  alertmanager:
+    containerPort: 11903
+    protocol: TCP
+    hostPort: 11903
+files:
+  ca.pem: |
+{{ .CA | indent 4 }}
+  server.pem: |
+{{ .ServerCert | indent 4 }}
+  server-key.pem: |
+{{ .ServerKey | indent 4 }}
+  client.pem: |
+{{ .ClientCert | indent 4 }}
+  client-key.pem: |
+{{ .ClientKey | indent 4 }}
+  envoy.yaml: |
+    node:
+      id: "{{ .ClusterID }}"
+      cluster: "{{ .ClusterID }}"
+    admin:
+      access_log_path: /dev/stdout
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 9000
+    dynamic_resources:
+      ads_config:
+        api_type: GRPC
+        transport_api_version: V3
+        set_node_on_first_message_only: true
+        grpc_services:
+          - envoy_grpc:
+              cluster_name: xds_cluster
+      lds_config:
+        resource_api_version: V3
+        ads: {}
+      cds_config:
+        resource_api_version: V3
+        ads: {}
+    static_resources:
+      clusters:
+        - connect_timeout: 1s
+          http2_protocol_options: {}
+          name: xds_cluster
+          type: STRICT_DNS
+          load_assignment:
+            cluster_name: xds_cluster
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: {{ .EnvoyADSAddress }}
+                          port_value: {{ .EnvoyADSPort }}
+          transport_socket:
+            name: "envoy.transport_sockets.tls"
+            typed_config:
+              "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext"
+              common_tls_context:
+                tls_certificate_sds_secret_configs:
+                  - name: client
+                validation_context_sds_secret_config:
+                  name: validation
+      secrets:
+        - name: server
+          tls_certificate:
+            certificate_chain:
+              filename: /config/server.pem
+            private_key:
+              filename: /config/server-key.pem
+        - name: client
+          tls_certificate:
+            certificate_chain:
+              filename: /config/client.pem
+            private_key:
+              filename: /config/client-key.pem
+        - name: validation
+          validation_context:
+            trusted_ca:
+              filename: /config/ca.pem

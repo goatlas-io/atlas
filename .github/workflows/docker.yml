@@ -1,0 +1,103 @@
+name: docker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'renovate') == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Detect Version for Docker
+        id: docker-version
+        run: echo ::set-output name=version::$(SEP="-" .ci/version)
+      - name: Detect Version
+        id: version
+        run: echo ::set-output name=version::$(.ci/version)
+    outputs:
+      docker-version: ${{ steps.docker-version.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
+
+  image:
+    runs-on: ubuntu-latest
+    needs: [version]
+    steps:
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%s')"
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get branch names
+        id: branch-name
+        uses: tj-actions/branch-names@v4.9
+      - name: Setup Docker Metadata
+        id: docker_metadata
+        uses: crazy-max/ghaction-docker-meta@v3
+        with:
+          images: |
+            ghcr.io/ekristen/atlas
+          tags: |
+            type=sha,prefix=${{ steps.branch-name.outputs.current_branch }}-
+            type=sha,prefix=${{ steps.branch-name.outputs.current_branch }}-,suffix=-${{ steps.date.outputs.date }}
+            type=ref,event=tag
+            type=ref,event=pr
+            type=raw,value=v${{ needs.version.outputs.docker-version }}
+            type=raw,value=${{ steps.branch-name.outputs.current_branch }}
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build to Registry
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          tags: ${{ steps.docker_metadata.outputs.tags }}
+          labels: ${{ steps.docker_metadata.outputs.labels }}
+          build-args: |
+            BRANCH=${{ steps.branch-name.outputs.current_branch }}
+          cache-from: |
+            type=registry,ref=ghcr.io/ekristen/atlas:master
+            type=registry,ref=ghcr.io/ekristen/atlas:${{ steps.branch-name.outputs.current_branch }}
+          cache-to: type=inline
+          outputs: type=registry
+      - name: Build to Docker
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          tags: ${{ steps.docker_metadata.outputs.tags }}
+          labels: ${{ steps.docker_metadata.outputs.labels }}
+          build-args: |
+            BRANCH=${{ steps.branch-name.outputs.current_branch }}
+          cache-from: |
+            type=registry,ref=ghcr.io/ekristen/atlas:master
+            type=registry,ref=ghcr.io/ekristen/atlas:${{ steps.branch-name.outputs.current_branch }}
+          cache-to: type=inline
+          outputs: type=docker
+      - name: Run Trivy vulnerability scanner in docker mode
+        uses: aquasecurity/trivy-action@master
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          image-ref: ghcr.io/ekristen/atlas:${{ steps.docker_metadata.outputs.version }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"

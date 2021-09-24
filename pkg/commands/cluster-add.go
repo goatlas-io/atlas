@@ -135,7 +135,7 @@ func (w *clusterAddCommand) Execute(c *cli.Context) error {
 			if _, err := kube.CoreV1().Services(c.String("namespace")).Create(ctx, newService, metav1.CreateOptions{}); err != nil {
 				return err
 			}
-			log.Info("Cluster (%s) added successfully")
+			log.Info("Cluster added successfully")
 		} else {
 			if c.Bool("overwrite") {
 				if _, err := kube.CoreV1().Services(c.String("namespace")).Update(ctx, newService, metav1.UpdateOptions{}); err != nil {

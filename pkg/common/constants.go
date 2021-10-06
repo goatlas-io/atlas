@@ -53,9 +53,8 @@ const (
 	ObservabilityEnvoyAtlasOwnerID     = "atlas-envoy"
 	ObservabilityEnvoyValuesSecretName = "atlas-envoy-values"
 
-	DNSOwnerID = "atlas-dns"
-	// TODO: this is to match when deployed with helm, needs to be configurable
-	DNSConfigMapName = "atlas-atlas-coredns"
+	DNSOwnerID       = "atlas-dns"
+	DNSConfigMapName = "atlas-coredns"
 	DNSTLD           = "atlas"
 
 	EnvoyADSObservabilityID = "atlas"

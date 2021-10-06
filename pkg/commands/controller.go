@@ -55,7 +55,7 @@ func (s *controlCommand) Execute(c *cli.Context) error {
 		return err
 	}
 
-	atlas, err := atlas.Register(ctx, conf, log, apply, core.Core().V1().Secret(), core.Core().V1().ConfigMap(), core.Core().V1().Service())
+	atlas, err := atlas.Register(ctx, conf, log, c, apply, core.Core().V1().Secret(), core.Core().V1().ConfigMap(), core.Core().V1().Service())
 	if err != nil {
 		return err
 	}
@@ -109,6 +109,12 @@ func init() {
 			Usage:   "The port for Atlas' Aggreggated Discovery Service (ADS) Server",
 			EnvVars: []string{"ATLAS_ENVOY_ADS_PORT"},
 			Value:   10900,
+		},
+		&cli.StringFlag{
+			Name:    "dns-config-map-name",
+			Usage:   "The name of the ConfigMap used for CoreDNS config and zone data",
+			EnvVars: []string{"ATLAS_DNS_CM_NAME"},
+			Value:   common.DNSConfigMapName,
 		},
 	}
 

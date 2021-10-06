@@ -71,6 +71,8 @@ spec:
         args: 
         - "controller"
         env:
+          - name: ATLAS_DNS_CM_NAME
+            value: {{ include "app.fullname" . }}-coredns
           - name: ATLAS_ENVOY_ADS_ADDRESS
             value: {{ .Values.envoyads.host }}
           - name: ATLAS_ENVOY_ADDRESS

@@ -45,6 +45,7 @@ type Controller struct {
 	ctx    context.Context
 	config *config.ControllerConfig
 	log    *logrus.Entry
+	cliCtx *cli.Context
 
 	apply         apply.Apply
 	secrets       core.SecretController
@@ -67,6 +68,7 @@ func Register(
 	ctx context.Context,
 	config *config.ControllerConfig,
 	log *logrus.Entry,
+	cli *cli.Context,
 	apply apply.Apply,
 	secrets core.SecretController,
 	configmaps core.ConfigMapController,
@@ -76,6 +78,7 @@ func Register(
 		ctx:           ctx,
 		config:        config,
 		log:           log.WithField("component-type", "controller").WithField("component", common.MonitoringNamespace),
+		cli:           cli,
 		apply:         apply.WithCacheTypes(secrets),
 		secrets:       secrets,
 		secretsCache:  secrets.Cache(),

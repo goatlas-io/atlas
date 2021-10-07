@@ -94,6 +94,8 @@ func Register(
 	c.services.OnChange(ctx, common.NAME, c.handleServiceChangeforDNS)
 	c.services.OnChange(ctx, common.NAME, c.handleServiceChangeforEnvoy)
 
+	// TODO: add related resource watch for atlas pki material to trigger all service envoy enqueue
+
 	return &c, nil
 }
 
@@ -733,7 +735,7 @@ func (c *Controller) handleServiceChangeforDNS(key string, service *corev1.Servi
 		},
 	}
 
-	if err := c.apply.WithCacheTypes(c.configmaps).WithSetID(common.DNSOwnerID).ApplyObjects(cm); err != nil {
+	if err := c.apply.WithCacheTypes(c.configmaps).ApplyObjects(cm); err != nil {
 		logrus.WithError(err).Error("unable to create dns config map for thanos-query service discovery")
 		return service, nil
 	}

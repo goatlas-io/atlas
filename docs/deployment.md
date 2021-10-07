@@ -4,6 +4,14 @@ You should have at least two clusters to take full advantage of Atlas. One to ac
 
 Atlas should only be installed to the **observability** cluster. All downstream clusters will need an envoy instance deployed, Atlas will provide the necessary helm values to configure the downstream clusters.
 
+## Step 0. Deploy Prometheus with Thanos Sidecar
+
+It is recommended you use the same namespace like `monitoring` for the deployment of Prometheus and Atlas.
+
+How you deploy Prometheus with the Thanos Sidecar is up to you, however I would recommend simply using the [kube-prometheus-stack]() helm chart as it makes this process very simple and takes care of the more complicated bits for you. If you want Thanos persisting to S3 you can pass your S3 credentials along as well.
+
+Once you have your Prometheus instances deployed, please make sure to note the service name as it will be necessary for configuring Atlas properly. If you are use `kube-prometheus-stack` most of the defaults will work out of the box. If you are using something non-standard, please make sure that the Prometheus Port and Thanos Sidecar ports are on the service.
+
 ## Step 1. Deploying Atlas
 
 The first step is to deploy Atlas to your observability cluster.

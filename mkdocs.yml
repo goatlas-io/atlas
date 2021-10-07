@@ -32,6 +32,8 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Quick Start: quick-start.md
+  - F.A.Q.: faq.md
+  - Components: components.md
   - Configuration: configuration.md
   - Deployment: deployment.md
   - Development: development.md

@@ -5,6 +5,9 @@ Welcome to Atlas, the project that makes running [Thanos](https://thanos.io/) at
 !!! note
     First and foremost thank you to Bartek Plotka who initially shared with me the Envoy strategy a couple years ago that ultimately led to the creation of this project.
 
+!!! important
+    The documentation is a work in progress, I've attempted to keep it as accurate as possible but there are some additional features in the works that may or may not be referenced in the docs. Apologies for any confusion.
+
 ## Overview
 
 Atlas provides the ability to easily run a secure distributed Thanos deployment. Atlas at it's core is a small set of kubernetes operators that uses services and secrets resources as the underlying source of truth to populate a customized Envoy Aggreggated Service Discovery server which the Envoy proxies connect to and obtain their configurations to create the secure distributed envoy network that Thanos then traverses for connectivity.

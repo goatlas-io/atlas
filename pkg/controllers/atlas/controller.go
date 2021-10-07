@@ -725,7 +725,7 @@ func (c *Controller) handleServiceChangeforDNS(key string, service *corev1.Servi
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.DNSConfigMapName,
+			Name:      c.cli.String("dns-config-map-name"),
 			Namespace: common.MonitoringNamespace,
 		},
 		Data: map[string]string{

@@ -24,7 +24,7 @@ require (
 	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.20.5
 	k8s.io/apimachinery v0.20.5
-	k8s.io/client-go v0.20.5
+	k8s.io/client-go/v12 v12.0.0
 )
 
-replace k8s.io/client-go => k8s.io/client-go v0.20.5
+replace k8s.io/client-go/v12 => k8s.io/client-go v12.0.0

@@ -11,7 +11,7 @@ DO_SIZE=${DO_SIZE:="s-2vcpu-4gb"}
 DO_IMAGE=${DO_IMAGE:="ubuntu-20-04-x64"}
 DIGITALOCEAN_SSH_KEYS=${DIGITALOCEAN_SSH_KEYS:-""}
 
-HELM_TAG=${HELM_TAG:="beta1-42a85b2"}
+HELM_TAG=${HELM_TAG:="master-5f87f6a"}
 HELM_PULLSECRET=${HELM_PULLSECRET:=""}
 
 GITHUB_USERNAME=${GITHUB_USERNAME:-""}
@@ -19,7 +19,7 @@ GITHUB_TOKEN=${GITHUB_TOKEN:-""}
 
 NAMESPACE=${NAMESPACE:="monitoring"}
 
-THANOS_VERSION=${THANOS_VERSION:="v0.20.1"}
+THANOS_VERSION=${THANOS_VERSION:="v0.23.1"}
 
 function setup_userdata {
     cat > userdata.yaml <<EOF
@@ -540,7 +540,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    goatlas.io/atlas: "true"
+    goatlas.io/cluster: "true"
     goatlas.io/replicas: "1"
   name: $name
   namespace: $NAMESPACE

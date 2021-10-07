@@ -1,6 +1,7 @@
 package envoy
 
 import (
+	"bytes"
 	"time"
 
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -15,6 +16,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	k8scorev1 "k8s.io/api/core/v1"
 )
 
 func buildCluster(clusterName, upstreamHost string, upstreamPort uint32, upstreamTLS bool, http2 bool) *cluster.Cluster {
@@ -330,4 +332,16 @@ func buildSecretTLSValidation(name string, ca []byte) *tls.Secret {
 			},
 		},
 	}
+}
+
+func combineCAs(ca *k8scorev1.Secret) []byte {
+	cas := [][]byte{}
+	sep := []byte("\n")
+	for k, v := range ca.Data {
+		if k == "ca-key.pem" {
+			continue
+		}
+		cas = append(cas, v)
+	}
+	return bytes.Join(cas, sep)
 }

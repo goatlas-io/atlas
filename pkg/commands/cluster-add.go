@@ -51,8 +51,8 @@ func (w *clusterAddCommand) Execute(c *cli.Context) error {
 	if notfound || c.Bool("overwrite") {
 		newService := service.DeepCopy()
 		newService.ObjectMeta.Labels = map[string]string{
-			common.ThanosClusterLabel: "true",
-			common.ReplicasLabel:      c.String("replicas"),
+			common.AtlasClusterLabel: "true",
+			common.ReplicasLabel:     c.String("replicas"),
 		}
 		newService.Spec = corev1.ServiceSpec{
 			ClusterIP:  "None",
@@ -85,51 +85,6 @@ func (w *clusterAddCommand) Execute(c *cli.Context) error {
 			},
 			ExternalIPs: c.StringSlice("external-ip"),
 		}
-
-		/*
-			service := &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      c.String("name"),
-					Namespace: c.String("namespace"),
-					Labels: map[string]string{
-						common.ReplicasLabel: c.String("replicas"),
-					},
-				},
-				Spec: corev1.ServiceSpec{
-					ClusterIP:  "None",
-					ClusterIPs: []string{},
-					Ports: []corev1.ServicePort{
-						{
-							Port: 9090,
-							TargetPort: intstr.IntOrString{
-								IntVal: 9090,
-							},
-							Protocol: "TCP",
-							Name:     "prometheus",
-						},
-						{
-							Port: 10901,
-							TargetPort: intstr.IntOrString{
-								IntVal: 10901,
-							},
-							Protocol: "TCP",
-							Name:     "thanos",
-						},
-						{
-							Port: 9093,
-							TargetPort: intstr.IntOrString{
-								IntVal: 9093,
-							},
-							Protocol: "TCP",
-							Name:     "alertmanager",
-						},
-					},
-					ExternalIPs: []string{
-						c.String("external-ip"),
-					},
-				},
-			}
-		*/
 
 		if notfound {
 			if _, err := kube.CoreV1().Services(c.String("namespace")).Create(ctx, newService, metav1.CreateOptions{}); err != nil {

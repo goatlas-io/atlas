@@ -23,6 +23,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +46,7 @@ type Controller struct {
 	ctx    context.Context
 	config *config.ControllerConfig
 	log    *logrus.Entry
-	cliCtx *cli.Context
+	cli    *cli.Context
 
 	apply         apply.Apply
 	secrets       core.SecretController
@@ -136,7 +137,7 @@ func (c *Controller) createObservabilityValues() error {
 		},
 	}
 
-	if err := c.apply.WithCacheTypes(c.secrets).WithSetID(common.ObservabilityEnvoyAtlasOwnerID).ApplyObjects(s); err != nil {
+	if err := c.apply.WithCacheTypes(c.secrets).WithSetID(common.ObservabilityEnvoyAtlasOwnerID).WithNoDelete().ApplyObjects(s); err != nil {
 		logrus.WithError(err).Error("unable to helm values secret for atlas observability cluster")
 		return err
 	}
@@ -197,7 +198,7 @@ func (c *Controller) configureCA() error {
 	log.Debug("start")
 
 	revision := 1
-	isNew := true
+	isNew := false
 	doGenerate := false
 
 	var currentCASecret *corev1.Secret
@@ -213,9 +214,12 @@ func (c *Controller) configureCA() error {
 	}
 
 	if !isNew {
+		log.Debug("is not new")
+
 		labels := caSecret.GetLabels()
 		annotations := caSecret.GetAnnotations()
 		if _, ok := annotations[common.CARotateAnnotation]; ok {
+			log.Debug("going to rotate")
 			currentCASecret = caSecret.DeepCopy()
 			doGenerate = true
 
@@ -266,7 +270,18 @@ func (c *Controller) configureCA() error {
 		}
 
 		if !isNew {
-			caSecret.Data["ca-previous.pem"] = currentCASecret.Data["ca.pem"]
+			currentCALabels := currentCASecret.GetLabels()
+			serial := currentCALabels[common.CASerialLabel]
+
+			caSecret.Data[fmt.Sprintf("ca-%s.pem", serial)] = currentCASecret.Data["ca.pem"]
+
+			for k, v := range currentCASecret.Data {
+				if k == "ca-key.pem" || k == "ca.pem" {
+					continue
+				}
+
+				caSecret.Data[k] = v
+			}
 		}
 
 		if err := c.apply.WithSetID(common.CAOwnerID).ApplyObjects(caSecret); err != nil {
@@ -461,11 +476,11 @@ func (c *Controller) generateCert(extKeyUsage []x509.ExtKeyUsage, commonName str
 		SerialNumber: serial,
 		Subject:      subject,
 		// IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage:  extKeyUsage,
-		KeyUsage:     x509.KeyUsageDigitalSignature,
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().AddDate(10, 0, 0),
+		// SubjectKeyId: []byte{1, 2, 3, 4, 6},
+		ExtKeyUsage: extKeyUsage,
+		KeyUsage:    x509.KeyUsageDigitalSignature,
 	}
 
 	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -569,7 +584,7 @@ func (c *Controller) handleServiceChange(key string, service *corev1.Service) (*
 	}
 
 	labels := service.GetLabels()
-	if _, ok := labels[common.ThanosClusterLabel]; !ok {
+	if _, ok := labels[common.AtlasClusterLabel]; !ok {
 		return service, nil
 	}
 
@@ -602,7 +617,7 @@ func (c *Controller) handleServiceChange(key string, service *corev1.Service) (*
 		service := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-thanos-sidecar%d", service.Name, i),
-				Namespace: common.MonitoringNamespace,
+				Namespace: service.GetNamespace(),
 				Labels: map[string]string{
 					common.SidecarLabel: fmt.Sprintf("%d", i),
 				},
@@ -612,10 +627,6 @@ func (c *Controller) handleServiceChange(key string, service *corev1.Service) (*
 				Ports:     service.Spec.Ports,
 				Type:      corev1.ServiceTypeClusterIP,
 				Selector:  resolvedSelectors,
-				//map[string]string{
-				//	"app":     "envoy",
-				//	"release": "thanos-envoy",
-				//},
 			},
 		}
 
@@ -738,8 +749,8 @@ func (c *Controller) handleServiceChangeforEnvoy(key string, service *corev1.Ser
 	labels := service.GetLabels()
 
 	// Ignore any service that isn't a Atlas/Thanos Cluster
-	if _, ok := labels[common.ThanosClusterLabel]; !ok {
-		c.log.WithField("service", service.GetName()).Debug("skipping registering service")
+	if _, ok := labels[common.AtlasClusterLabel]; !ok {
+		c.log.WithField("service", service.GetName()).Debug("skipped: not an atlas cluster")
 		return service, nil
 	}
 
@@ -808,12 +819,12 @@ func (c *Controller) handleServiceChangeforEnvoy(key string, service *corev1.Ser
 		},
 	}
 
-	if err := c.apply.WithOwner(service).ApplyObjects(s); err != nil {
+	if err := c.apply.WithSetOwnerReference(false, true).WithOwner(service).ApplyObjects(s); err != nil {
 		logrus.WithError(err).Error("unable to store secret")
 		return service, err
 	}
 
-	c.log.WithField("service", service.GetName()).Info("created or updated secret successfully")
+	c.log.WithField("service", service.GetName()).Info("created or updated envoy values secret")
 
 	return service, nil
 }

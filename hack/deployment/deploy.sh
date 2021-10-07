@@ -540,8 +540,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    atlas.ekristen.github.com/atlas: "true"
-    atlas.ekristen.github.com/replicas: "1"
+    goatlas.io/atlas: "true"
+    goatlas.io/replicas: "1"
   name: $name
   namespace: $NAMESPACE
 spec:

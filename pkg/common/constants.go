@@ -9,28 +9,28 @@ const (
 	IngressTLSSecretName = "atlas-tls"
 
 	CAOwnerID          = "atlas-ca"
-	CARotateAnnotation = "atlas.ekristen.github.com/ca-rotate"
-	CARevisionLabel    = "atlas.ekristen.github.com/ca-revision"
-	CASerialLabel      = "atlas.ekristen.github.com/ca-serial"
-	CASignedSerial     = "atlas.ekristen.github.com/ca-signed"
-	CAChecksumLabel    = "atlas.ekristen.github.com/ca-checksum"
-	CAUsageClientLabel = "atlas.ekristen.github.com/ca-usage-client"
-	CAUsageServerLabel = "atlas.ekristen.github.com/ca-usage-server"
-	IsCALabel          = "atlas.ekristen.github.com/ca"
-	IsCertLabel        = "atlas.ekristen.github.com/cert"
+	CARotateAnnotation = "goatlas.io/ca-rotate"
+	CARevisionLabel    = "goatlas.io/ca-revision"
+	CASerialLabel      = "goatlas.io/ca-serial"
+	CASignedSerial     = "goatlas.io/ca-signed"
+	CAChecksumLabel    = "goatlas.io/ca-checksum"
+	CAUsageClientLabel = "goatlas.io/ca-usage-client"
+	CAUsageServerLabel = "goatlas.io/ca-usage-server"
+	IsCALabel          = "goatlas.io/ca"
+	IsCertLabel        = "goatlas.io/cert"
 
-	ThanosClusterLabel = "atlas.ekristen.github.com/atlas"
-	SidecarLabel       = "atlas.ekristen.github.com/thanos-sidecar"
-	ReplicasLabel      = "atlas.ekristen.github.com/replicas"
+	AtlasClusterLabel = "goatlas.io/cluster"
+	SidecarLabel      = "goatlas.io/thanos-sidecar"
+	ReplicasLabel     = "goatlas.io/replicas"
 
-	EnvoySelectorsAnnotation = "atlas.ekristen.github.com/envoy-selectors"
+	EnvoySelectorsAnnotation = "goatlas.io/envoy-selectors"
 	EnvoySelectors           = "app=envoy,release=atlas"
 
 	// These are uses on a service to change the default service fqdn from the downstream
 	// cluster. This is mainly useful when the prometheus-operator is not being used.
-	ThanosServiceLabel       = "atlas.ekristen.github.com/thanos-service"
-	PrometheusServiceLabel   = "atlas.ekristen.github.com/prometheus-service"
-	AlertManagerServiceLabel = "atlas.ekristen.github.com/alertmanager-service"
+	ThanosServiceLabel       = "goatlas.io/thanos-service"
+	PrometheusServiceLabel   = "goatlas.io/prometheus-service"
+	AlertManagerServiceLabel = "goatlas.io/alertmanager-service"
 
 	ThanosFQDN       = "prometheus-operated.monitoring.svc.cluster.local"
 	ThanosPort       = 10901

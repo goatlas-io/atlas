@@ -2,9 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    ekristen.github.com/atlas: "true"
-    ekristen.github.com/external-ip: 3.136.35.224
-    ekristen.github.com/thanos-sidecar: "0"
+    goatlas.io/cluster: "true"
+    goatlas.io/thanos-sidecar: "0"
   name: downstream-cluster-name-thanos-sidecarN
   namespace: monitoring
 spec:

@@ -156,7 +156,7 @@ func (e *EnvoyADS) serviceOnChange(key string, service *k8scorev1.Service) (*k8s
 	}
 
 	labels := service.GetLabels()
-	if _, ok := labels[common.ThanosClusterLabel]; ok {
+	if _, ok := labels[common.AtlasClusterLabel]; ok {
 		if err := e.Sync(); err != nil {
 			e.log.WithError(err).Error("unable to sync")
 		}
@@ -233,7 +233,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*thanosCluster) err
 		// Note: these are cluster definitions for the downstream envoy proxy of services that define local services
 		// that are targets of connections
 		dsclusterClusters := []types.Resource{
-			buildCluster("thanos_sidecar", common.ThanosFQDN, common.ThanosPort, false, true),
+			buildCluster("thanos_sidecar", common.ThanosFQDN, common.ObservabilityThanosPort, false, true),
 			buildCluster("prometheus", common.PrometheusFQDN, common.PrometheusPort, false, false),
 			// TODO: add alertmanager
 		}
@@ -249,7 +249,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*thanosCluster) err
 		// Note: we do not send the client cert, because the is controlled by the
 		// static cluster definition for the xds_cluster for dynamic discovery.
 		dsclusterSecretResources := []types.Resource{
-			buildSecretTLSValidation("validation", ca.Data["ca.pem"]),
+			buildSecretTLSValidation("validation", combineCAs(ca)),
 			buildSecretTLSCertificate("server", server.Data["tls.crt"], server.Data["tls.key"]),
 		}
 
@@ -330,7 +330,7 @@ func (e *EnvoyADS) SyncObservability(versionID string, clusters []*thanosCluster
 	}
 
 	secretResources := []types.Resource{
-		buildSecretTLSValidation("validation", ca.Data["ca.pem"]),
+		buildSecretTLSValidation("validation", combineCAs(ca)),
 		buildSecretTLSCertificate("server", server.Data["tls.crt"], server.Data["tls.key"]),
 	}
 
@@ -371,7 +371,6 @@ func (e *EnvoyADS) SyncObservability(versionID string, clusters []*thanosCluster
 	promDomains := []string{"*"}
 	promVhRoutes := []*route.Route{}
 
-	// TODO: we need a separate virtualhost and route for each thanos-sidecar
 	for _, r := range clusters {
 		thanosName := fmt.Sprintf("%s-thanos", r.Name)
 		promName := fmt.Sprintf("%s-prom", r.Name)
@@ -387,7 +386,7 @@ func (e *EnvoyADS) SyncObservability(versionID string, clusters []*thanosCluster
 			domains = append(domains, fmt.Sprintf("%s-thanos-sidecar%d.%s.svc.cluster.local*", r.Name, i, r.Namespace))
 		}
 
-		rewrite := common.PrometheusFQDN // "prometheus-operated.monitoring.svc.cluster.local"
+		rewrite := common.PrometheusFQDN
 		virtualhosts = append(virtualhosts, buildVirtualHost(thanosName, domains, thanosName, "/", rewrite, nil, false))
 
 		prefixParts := []string{"prom", r.Name}
@@ -514,7 +513,7 @@ func registerServer(grpcServer *grpc.Server, server server.Server) {
 }
 
 func (e *EnvoyADS) getClusters() ([]*thanosCluster, error) {
-	requirement, err := labels.NewRequirement(common.ThanosClusterLabel, selection.Exists, []string{})
+	requirement, err := labels.NewRequirement(common.AtlasClusterLabel, selection.Exists, []string{})
 	if err != nil {
 		return nil, err
 	}

@@ -25,12 +25,15 @@ markdown_extensions:
       guess_lang: false
   - toc:
       permalink: true
-  - pymdownx.superfences:
-      highlight_code: true
+  - pymdownx.superfences
   - pymdownx.tabbed
+  - pymdownx.highlight
 
 nav:
   - Home: index.md
-  - Guides:
-      - Quick Start: guides/quick-start.md
-      - Getting Started: guides/getting-started.md
+  - Quick Start: quick-start.md
+  - F.A.Q.: faq.md
+  - Components: components.md
+  - Configuration: configuration.md
+  - Deployment: deployment.md
+  - Development: development.md

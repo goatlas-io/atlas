@@ -1,0 +1,148 @@
+# Deployment
+
+You should have at least two clusters to take full advantage of Atlas. One to act as the observability cluster and the other as a downstream cluster, if you have more than two clusters, all the others are downstream clusters too.
+
+Atlas should only be installed to the **observability** cluster. All downstream clusters will need an envoy instance deployed, Atlas will provide the necessary helm values to configure the downstream clusters.
+
+## Step 1. Deploying Atlas
+
+The first step is to deploy Atlas to your observability cluster.
+
+```bash
+helm install atlas chart/
+```
+
+## Step 2. Modify CoreDNS Configuration
+
+!!! note
+    I highly recommend using GitOps for modifying and configuring the configmap `kube-system/coredns`
+
+Using your favorite method, you will need to edit the coredns config map in the kube-system namespace.
+
+Add the following to the Corefile section.
+
+```text
+    atlas:53 {
+        errors
+        cache 30
+        forward . 10.43.43.10
+    }
+```
+
+The complete version should look something like the following.
+
+```yaml
+apiVersion: v1
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+        }
+        hosts /etc/coredns/NodeHosts {
+          ttl 60
+          reload 15s
+          fallthrough
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+    atlas:53 {
+        errors
+        cache 30
+        forward . 10.43.43.10
+    }
+  NodeHosts: |
+    172.20.0.2 k3d-atlas-server-0
+kind: ConfigMap
+```
+
+## Step 3. Add Downstream Cluster to Observability Cluster
+
+Telling Atlas about a downstream cluster is as simple as adding a Service resource to your observability cluster or you can use the Atlas binary.
+
+### Using YAML
+
+Be sure to change the `name`, `namespace` and the `externalIPs` section to the appropriate values.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    goatlas.io/cluster: "true"
+    goatlas.io/replicas: "1"
+  name: downstream1
+  namespace: monitoring
+spec:
+  clusterIP: None
+  clusterIPs:
+    - None
+  externalIPs:
+    - 1.1.1.1
+  ports:
+    - name: prometheus
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+    - name: grpc
+      port: 10901
+      protocol: TCP
+      targetPort: 10901
+    - name: http
+      port: 10902
+      protocol: TCP
+      targetPort: 10902
+```
+
+### Using the CLI
+
+```bash
+atlas cluster-add --name "downstream1" --replicas 1 --external-ip "1.1.1.1" 
+```
+
+### Step 4. Deploy Envoy on Downstream Cluster
+
+Atlas generates helm values for the Atlas Envoy Helm Chart for every downstream cluster added. These values come with the necessary seed values to allow initial secure connections to be established. Once comms are established the Envoy Aggreggated Discovery capabilites take over ensuring the downstream envoy instance stays configure properly.
+
+Retrieve the downstream's helm values with the `atlas` or `kubectl`
+
+```bash
+atlas cluster-values --name "downstream1" > downstream1.yaml
+```
+
+OR
+
+```bash
+kubectl get secret -n monitoring downstream1-envoy-values -o json | jq -r '.data."values.yaml" | base64 -D > downstream1.yaml
+```
+
+Once you have the values, install helm on your downstream cluster. Make sure you switch to your downstream cluster context now.
+
+```bash
+helm install envoy --values downstream1.yaml chart/
+```
+
+Once complete, this envoy proxy will come online and configure itself automatically.
+
+### Step 5. Repeat
+
+If you have more than one downstream cluster, repeast steps 3 and 4 until you've added all your clusters.
+
+1. Deploy Atlas with Helm
+2. Modify `kube-system/coredns` configmap (ideally with giops) to forward altas TLD to atlas coredns server
+3. Generate Downstream Envoy Helm Values
+4. Deploy Downstream Envoy Helm Chart
+5. Deploy Downstream Prometheus
+6. Create Service for Downstream Cluster in Observability Cluster
+7. Sit back and enjoy the metrics flowing in!
+
+**Note:** when using `kube-prometheus-stack` ensure `servicePerReplica` is enabled for both prometheus and alertmanager sections.

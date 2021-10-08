@@ -636,7 +636,7 @@ func (c *Controller) handleServiceChange(key string, service *corev1.Service) (*
 	}
 
 	if err := c.apply.WithCacheTypes(c.services).WithSetOwnerReference(false, true).WithOwner(service).ApplyObjects(objs...); err != nil {
-		logrus.WithError(err).Error("unable to create dns config map for thanos-query service discovery")
+		logrus.WithError(err).Error("unable to create thanos-sidecar service")
 		return service, nil
 	}
 
@@ -735,7 +735,7 @@ func (c *Controller) handleServiceChangeforDNS(key string, service *corev1.Servi
 		},
 	}
 
-	if err := c.apply.WithCacheTypes(c.configmaps).ApplyObjects(cm); err != nil {
+	if err := c.apply.WithCacheTypes(c.configmaps).WithSetID(common.DNSOwnerID).ApplyObjects(cm); err != nil {
 		logrus.WithError(err).Error("unable to create dns config map for thanos-query service discovery")
 		return service, nil
 	}

@@ -37,7 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 )
 
-type thanosCluster struct {
+type atlasCluster struct {
 	Name       string
 	Namespace  string
 	Replicas   int
@@ -45,6 +45,9 @@ type thanosCluster struct {
 	ThanosPort uint32
 	PromPort   uint32
 	AMPort     uint32
+
+	ThanoService      string
+	PrometheusService string
 
 	service *k8scorev1.Service
 }
@@ -187,7 +190,7 @@ func (e *EnvoyADS) Sync() error {
 	return nil
 }
 
-func (e *EnvoyADS) SyncClusters(versionID string, clusters []*thanosCluster) error {
+func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) error {
 	actualAMServices := []*k8scorev1.Service{}
 
 	ca, err := e.secretsCache.Get(common.MonitoringNamespace, common.CASecretName)
@@ -233,8 +236,8 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*thanosCluster) err
 		// Note: these are cluster definitions for the downstream envoy proxy of services that define local services
 		// that are targets of connections
 		dsclusterClusters := []types.Resource{
-			buildCluster("thanos_sidecar", common.ThanosFQDN, common.ObservabilityThanosPort, false, true),
-			buildCluster("prometheus", common.PrometheusFQDN, common.PrometheusPort, false, false),
+			buildCluster("thanos_sidecar", cluster.ThanoService, common.ObservabilityThanosPort, false, true),
+			buildCluster("prometheus", cluster.PrometheusService, common.PrometheusPort, false, false),
 			// TODO: add alertmanager
 		}
 
@@ -307,7 +310,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*thanosCluster) err
 	return nil
 }
 
-func (e *EnvoyADS) SyncObservability(versionID string, clusters []*thanosCluster) error {
+func (e *EnvoyADS) SyncObservability(versionID string, clusters []*atlasCluster) error {
 	addClientSecret := false
 
 	if len(clusters) > 0 {
@@ -386,7 +389,7 @@ func (e *EnvoyADS) SyncObservability(versionID string, clusters []*thanosCluster
 			domains = append(domains, fmt.Sprintf("%s-thanos-sidecar%d.%s.svc.cluster.local*", r.Name, i, r.Namespace))
 		}
 
-		rewrite := common.PrometheusFQDN
+		rewrite := r.PrometheusService
 		virtualhosts = append(virtualhosts, buildVirtualHost(thanosName, domains, thanosName, "/", rewrite, nil, false))
 
 		prefixParts := []string{"prom", r.Name}
@@ -512,7 +515,7 @@ func registerServer(grpcServer *grpc.Server, server server.Server) {
 	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, server)
 }
 
-func (e *EnvoyADS) getClusters() ([]*thanosCluster, error) {
+func (e *EnvoyADS) getClusters() ([]*atlasCluster, error) {
 	requirement, err := labels.NewRequirement(common.AtlasClusterLabel, selection.Exists, []string{})
 	if err != nil {
 		return nil, err
@@ -524,9 +527,10 @@ func (e *EnvoyADS) getClusters() ([]*thanosCluster, error) {
 		return nil, err
 	}
 
-	clusters := []*thanosCluster{}
+	clusters := []*atlasCluster{}
 
 	for _, s := range services {
+		annotations := s.GetAnnotations()
 		labels := s.GetLabels()
 
 		replicas := 1
@@ -539,7 +543,17 @@ func (e *EnvoyADS) getClusters() ([]*thanosCluster, error) {
 			}
 		}
 
-		clusters = append(clusters, &thanosCluster{
+		thanosService := common.ThanosFQDN
+		if v, ok := annotations[common.ThanosServiceLabel]; ok {
+			thanosService = v
+		}
+
+		prometheusService := common.PrometheusFQDN
+		if v, ok := annotations[common.PrometheusServiceLabel]; ok {
+			prometheusService = v
+		}
+
+		clusters = append(clusters, &atlasCluster{
 			Name:       s.Name,
 			Namespace:  s.Namespace,
 			Replicas:   replicas,
@@ -548,6 +562,9 @@ func (e *EnvoyADS) getClusters() ([]*thanosCluster, error) {
 			PromPort:   uint32(common.ClusterInboundPrometheusPort),
 			AMPort:     uint32(common.ClusterInboundAlertManagerPort),
 			service:    s,
+
+			ThanoService:      thanosService,
+			PrometheusService: prometheusService,
 		})
 	}
 

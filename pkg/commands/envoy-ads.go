@@ -54,7 +54,7 @@ func (s *envoyADSCommand) Execute(c *cli.Context) error {
 		return err
 	}
 
-	envoyads := envoy.Register(ctx, conf, log, apply,
+	envoyads := envoy.Register(ctx, conf, log, apply, c,
 		core.Core().V1().Service(),
 		core.Core().V1().Secret())
 
@@ -96,6 +96,12 @@ func init() {
 			Usage:   "FQDN or IP of Atlas' Envoy Server",
 			EnvVars: []string{"ATLAS_ENVOY_ADDRESS"},
 			Value:   "localhost",
+		},
+		&cli.StringFlag{
+			Name:    "alertmanager-selector",
+			Usage:   "Label Selector for AlertManager",
+			EnvVars: []string{"ALERTMANAGER_SELECTOR"},
+			Value:   common.ObservabilityAlertManagerServiceLabel,
 		},
 		&cli.StringFlag{
 			Name:    "namespace",

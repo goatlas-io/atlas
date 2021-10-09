@@ -10,6 +10,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 
 	"github.com/ekristen/atlas/pkg/common"
@@ -60,6 +61,7 @@ type EnvoyADS struct {
 	config                   *config.EnvoyADSConfig
 	log                      *logrus.Entry
 	apply                    apply.Apply
+	cli                      *cli.Context
 	callbacks                *Callbacks
 	cache                    cache.SnapshotCache
 	server                   server.Server
@@ -78,6 +80,7 @@ func Register(
 	config *config.EnvoyADSConfig,
 	log *logrus.Entry,
 	apply apply.Apply,
+	cliCtx *cli.Context,
 	services wranglercorev1.ServiceController,
 	secrets wranglercorev1.SecretController) *EnvoyADS {
 
@@ -90,6 +93,7 @@ func Register(
 		config:                   config,
 		log:                      log,
 		apply:                    apply,
+		cli:                      cliCtx,
 		debugEnvoy:               false,
 	}
 
@@ -212,8 +216,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) erro
 	}
 
 	amServices, err := e.services.List(common.MonitoringNamespace, v1.ListOptions{
-		// TODO: needs to be a configuration option backed by a default value
-		LabelSelector: common.ObservabilityAlertManagerServiceLabel,
+		LabelSelector: e.cli.String("alertmanager-selector"),
 	})
 	if err != nil {
 		return err
@@ -260,7 +263,6 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) erro
 		}
 
 		// If there are alertmanagers deployed, modify the the downstream cluster ADS configuration appropriately
-		// TODO: the first localhost needs to be a setting to set AM hostname
 		if len(actualAMServices) > 0 && "localhost" != e.config.AtlasEnvoyAddress {
 			dsclusterClusters = append(dsclusterClusters, buildCluster("alertmanagers", e.config.AtlasEnvoyAddress, common.ObservabilityAlertManagerPort, true, true))
 
@@ -349,8 +351,7 @@ func (e *EnvoyADS) SyncObservability(versionID string, clusters []*atlasCluster)
 	actualAMServices := []*k8scorev1.Service{}
 
 	amServices, err := e.services.List(common.MonitoringNamespace, v1.ListOptions{
-		// TODO: needs to be a configuration option backed by a default value
-		LabelSelector: common.ObservabilityAlertManagerServiceLabel,
+		LabelSelector: e.cli.String("alertmanager-selector"),
 	})
 	if err != nil {
 		return err

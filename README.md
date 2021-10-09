@@ -4,6 +4,8 @@
 
 Atlas, forced by Zeus to support the heavens and the skies on his shoulders.
 
+[See Full Documentation](docs/index.md)
+
 ## Overview
 
 Atlas provides the ability to easily run a secure distributed Thanos deployment. Atlas at it's core is a small set of kubernetes operators that uses services and secrets resources as the underlying source of truth to populate a customized Envoy Aggreggated Service Discovery server which the Envoy proxies connect to and obtain their configurations to create the secure distributed envoy network that Thanos then traverses for connectivity.
@@ -14,6 +16,6 @@ Finally Atlas provides the ability for EVERY downstream cluster's Prometheus ins
 
 Atlas does not deploy Thanos or configure Thanos for you. Please see Atlas documentation on how to configure Thanos to use Atlas.
 
-## Full Documentation
+## How It Works
 
-[See Full Documentation](docs/index.md)
+Atlas leverages kubernetes services, label selectors, and annotations to configurable all the necessary components. By default Atlas is configured to work seamlessly with [kube-prometheus-stack]() helm chart.

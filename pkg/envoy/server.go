@@ -38,16 +38,19 @@ import (
 )
 
 type atlasCluster struct {
-	Name       string
-	Namespace  string
-	Replicas   int
-	IP         string
-	ThanosPort uint32
-	PromPort   uint32
-	AMPort     uint32
+	Name      string
+	Namespace string
+	Replicas  int
+	IP        string
 
-	ThanoService      string
+	ThanosService string
+	ThanosPort    uint32
+
 	PrometheusService string
+	PromPort          uint32
+
+	AlertManagerService string
+	AMPort              uint32
 
 	service *k8scorev1.Service
 }
@@ -236,7 +239,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) erro
 		// Note: these are cluster definitions for the downstream envoy proxy of services that define local services
 		// that are targets of connections
 		dsclusterClusters := []types.Resource{
-			buildCluster("thanos_sidecar", cluster.ThanoService, common.ObservabilityThanosPort, false, true),
+			buildCluster("thanos_sidecar", cluster.ThanosService, common.ObservabilityThanosPort, false, true),
 			buildCluster("prometheus", cluster.PrometheusService, common.PrometheusPort, false, false),
 			// TODO: add alertmanager
 		}
@@ -292,7 +295,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) erro
 			dsclusterSecretResources, // secrets
 		)
 
-		slog := logrus.WithField("id", cluster.Name)
+		slog := e.log.WithField("id", cluster.Name).WithField("version", versionID)
 		slog.Info("generating snapshot ", versionID)
 		if err := dsclusterSnapshot.Consistent(); err != nil {
 			slog.WithError(err).Error("snapshot inconsistency")
@@ -467,7 +470,7 @@ func (e *EnvoyADS) SyncObservability(versionID string, clusters []*atlasCluster)
 	}
 
 	if err := e.cache.SetSnapshot(common.EnvoyADSObservabilityID, snapshot); err != nil {
-		slog.WithError(err).Error("snapshot error")
+		slog.WithError(err).Error("unable to set snapshot")
 		return err
 	}
 
@@ -563,7 +566,7 @@ func (e *EnvoyADS) getClusters() ([]*atlasCluster, error) {
 			AMPort:     uint32(common.ClusterInboundAlertManagerPort),
 			service:    s,
 
-			ThanoService:      thanosService,
+			ThanosService:     thanosService,
 			PrometheusService: prometheusService,
 		})
 	}

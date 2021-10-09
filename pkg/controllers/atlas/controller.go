@@ -34,6 +34,7 @@ import (
 
 	"github.com/rancher/wrangler/pkg/apply"
 	core "github.com/rancher/wrangler/pkg/generated/controllers/core/v1"
+	"github.com/rancher/wrangler/pkg/relatedresource"
 
 	"github.com/ekristen/atlas/pkg/common"
 	"github.com/ekristen/atlas/pkg/config"
@@ -80,7 +81,7 @@ func Register(
 		config:        config,
 		log:           log.WithField("component-type", "controller").WithField("component", common.MonitoringNamespace),
 		cli:           cli,
-		apply:         apply.WithCacheTypes(secrets),
+		apply:         apply,
 		secrets:       secrets,
 		secretsCache:  secrets.Cache(),
 		configmaps:    configmaps,
@@ -88,13 +89,51 @@ func Register(
 		servicesCache: services.Cache(),
 	}
 
-	c.secrets.OnChange(ctx, common.NAME, c.handleChange)
-
+	c.secrets.OnChange(ctx, common.NAME, c.handleSecretChange)
 	c.services.OnChange(ctx, common.NAME, c.handleServiceChange)
 	c.services.OnChange(ctx, common.NAME, c.handleServiceChangeforDNS)
-	c.services.OnChange(ctx, common.NAME, c.handleServiceChangeforEnvoy)
 
-	// TODO: add related resource watch for atlas pki material to trigger all service envoy enqueue
+	// Index all services that are Atlas Clusters into the PKI index.
+	c.servicesCache.AddIndexer("atlasClusters", func(obj *corev1.Service) ([]string, error) {
+		labels := obj.GetLabels()
+		if _, ok := labels[common.AtlasClusterLabel]; ok {
+			return []string{"pki"}, nil
+		}
+		return []string{}, nil
+	})
+
+	// Watch for changes to Secrets that are marked as Atlas PKI, then enqueue all services that are
+	// Atlas clusters so that they'll reprocess and update envoy values for bootstrap with new PKI
+	relatedresource.Watch(ctx, "atlas", func(namespace, name string, obj runtime.Object) (result []relatedresource.Key, _ error) {
+		if obj == nil {
+			return result, nil
+		}
+		if obj.GetObjectKind().GroupVersionKind().Kind != "Secret" {
+			return result, nil
+		}
+
+		secret := obj.(*corev1.Secret)
+		labels := secret.GetLabels()
+		_, caOK := labels[common.IsCALabel]
+		_, certOK := labels[common.IsCertLabel]
+		if !caOK && !certOK {
+			return result, nil
+		}
+
+		services, err := c.servicesCache.GetByIndex("atlasClusters", "pki")
+		if err != nil {
+			return nil, err
+		}
+
+		for _, service := range services {
+			result = append(result, relatedresource.Key{
+				Namespace: service.Namespace,
+				Name:      service.Name,
+			})
+		}
+
+		return result, nil
+	}, c.services, c.secrets)
 
 	return &c, nil
 }
@@ -164,7 +203,7 @@ func (c *Controller) Setup() error {
 	return nil
 }
 
-func (c *Controller) handleChange(key string, secret *corev1.Secret) (*corev1.Secret, error) {
+func (c *Controller) handleSecretChange(key string, secret *corev1.Secret) (*corev1.Secret, error) {
 	if secret == nil {
 		return nil, nil
 	}
@@ -286,11 +325,11 @@ func (c *Controller) configureCA() error {
 			}
 		}
 
-		if err := c.apply.WithSetID(common.CAOwnerID).ApplyObjects(caSecret); err != nil {
+		if err := c.apply.WithCacheTypes(c.secrets).WithSetID(common.CAOwnerID).ApplyObjects(caSecret); err != nil {
 			return err
 		}
 
-		log.Debug("generated")
+		log.Info("generated/rotated certificate authority")
 	}
 
 	if v, ok := caSecret.Data["ca.pem"]; ok {
@@ -454,7 +493,7 @@ func (c *Controller) setupPKI() error {
 			},
 		}
 
-		if err := c.apply.WithOwner(c.caSecret).ApplyObjects(ingressTLSSecret, mtlsClientSecret, mtlsServerSecret); err != nil {
+		if err := c.apply.WithCacheTypes(c.secrets).WithOwner(c.caSecret).ApplyObjects(ingressTLSSecret, mtlsClientSecret, mtlsServerSecret); err != nil {
 			return err
 		}
 	}
@@ -635,9 +674,15 @@ func (c *Controller) handleServiceChange(key string, service *corev1.Service) (*
 		objs = append(objs, service)
 	}
 
-	if err := c.apply.WithCacheTypes(c.services).WithSetOwnerReference(false, true).WithOwner(service).ApplyObjects(objs...); err != nil {
+	s, err := c.generateEnvoyValuesSecret(service)
+	if err != nil {
+		return service, err
+	}
+	objs = append(objs, s)
+
+	if err := c.apply.WithCacheTypes(c.secrets, c.services).WithSetOwnerReference(false, false).WithOwner(service).ApplyObjects(objs...); err != nil {
 		logrus.WithError(err).Error("unable to create thanos-sidecar service")
-		return service, nil
+		return service, err
 	}
 
 	return service, nil
@@ -743,32 +788,20 @@ func (c *Controller) handleServiceChangeforDNS(key string, service *corev1.Servi
 	return service, nil
 }
 
-func (c *Controller) handleServiceChangeforEnvoy(key string, service *corev1.Service) (*corev1.Service, error) {
-	if service == nil {
-		return nil, nil
-	}
-
-	labels := service.GetLabels()
-
-	// Ignore any service that isn't a Atlas/Thanos Cluster
-	if _, ok := labels[common.AtlasClusterLabel]; !ok {
-		c.log.WithField("service", service.GetName()).Debug("skipped: not an atlas cluster")
-		return service, nil
-	}
-
+func (c *Controller) generateEnvoyValuesSecret(service *corev1.Service) (*corev1.Secret, error) {
 	ca, err := c.secretsCache.Get(common.MonitoringNamespace, common.CASecretName)
 	if err != nil {
-		return service, err
+		return nil, err
 	}
 
 	server, err := c.secretsCache.Get(common.MonitoringNamespace, common.ServerSecretName)
 	if err != nil {
-		return service, err
+		return nil, err
 	}
 
 	client, err := c.secretsCache.Get(common.MonitoringNamespace, common.ClientSecretName)
 	if err != nil {
-		return service, err
+		return nil, err
 	}
 
 	data := struct {
@@ -794,20 +827,20 @@ func (c *Controller) handleServiceChangeforEnvoy(key string, service *corev1.Ser
 	d, err := templates.ReadFile("templates/envoy-downstream.tmpl")
 	if err != nil {
 		logrus.WithError(err).Error("unable to read in template")
-		return service, nil
+		return nil, err
 	}
 
 	tmpl, err := template.New("zone").Funcs(sprig.TxtFuncMap()).Parse(string(d))
 	if err != nil {
 		logrus.WithError(err).Error("unable to parse template")
-		return service, nil
+		return nil, err
 	}
 
 	var buf bytes.Buffer
 
 	if err := tmpl.Execute(&buf, data); err != nil {
 		logrus.WithError(err).Error("unable to execute template")
-		return service, nil
+		return nil, err
 	}
 
 	secretName := fmt.Sprintf("%s-envoy-values", service.Name)
@@ -821,12 +854,5 @@ func (c *Controller) handleServiceChangeforEnvoy(key string, service *corev1.Ser
 		},
 	}
 
-	if err := c.apply.WithSetOwnerReference(false, true).WithOwner(service).ApplyObjects(s); err != nil {
-		logrus.WithError(err).Error("unable to store secret")
-		return service, err
-	}
-
-	c.log.WithField("service", service.GetName()).Info("created or updated envoy values secret")
-
-	return service, nil
+	return s, nil
 }

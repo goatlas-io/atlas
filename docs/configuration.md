@@ -6,20 +6,43 @@
 Atlas leverages a few labels to identify which services it should care about, all others it ignores.
 
 - `goatlas.io/cluster` - This is used on a service to identify it as a record with external IPs as a downstream cluster
+- `goatlas.io/replicas` - The number of Thanos replicas in the downstream clusters
 
 ## Annotations
 
-Atlas currently relies upon existing resource definitions within Kubernetes to work and therefore relies on annotations for configuration.
+Atlas currently relies upon existing resource definitions within Kubernetes to work and therefore relies on annotations on services for configuration.
 
 ### goatlas.io/envoy-selectors
 
-**Default:** `app=envoy,release=atlas`
+- **Default:** `app=envoy,release=atlas`
+- **Resource:** `service`
 
 This annotation is used to override the selector labels uses to identify the Envoy Proxy service that all traffic should be routed through on the downstream cluster, this is important when you deviate from the default deployment naming conventions.
 
+### goatlas.io/thanos-service
+
+- **Default:** `prometheus-operated.monitoring.svc.cluster.local`
+- **Resource:** `service`
+
+This annotation is used to change the default fully qualified domain name on the downstream cluster where the thanos sidecar can be reached.
+
+### goatlas.io/prometheus-service
+
+- **Default:** `prometheus-operated.monitoring.svc.cluster.local`
+- **Resource:** `service`
+
+This annotation is used to change the default fully qualified domain name on the downstream cluster where the prometheus instance can be reached.
+
+### goatlas.io/alertmanager-service
+
+- **Default:** `alertmanager-operated.monitoring.svc.cluster.local`
+- **Resource:** `service`
+
+This annotation is used to change the default fully qualified domain name on the downstream cluster where the alertmanager instance can be reached.
+
 ## Ingress Setup for Prometheus Access
 
-The helm chart takes care of all ingresses for Atlas, however there are additional ingress tweaks you may elect to perform should you want to use the full power of Atlas. 
+The helm chart takes care of all ingresses for Atlas, however there are additional ingress tweaks you may elect to perform should you want to use the full power of Atlas.
 
 Atlas can provide access to all downstream prometheus instances and alert manager instances using the Envoy Proxy network it establishes, but you have to configure an ingress with path prefixing to route the traffic.
 

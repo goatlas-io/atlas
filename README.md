@@ -19,3 +19,5 @@ Atlas does not deploy Thanos or configure Thanos for you. Please see Atlas docum
 ## How It Works
 
 Atlas leverages kubernetes services, label selectors, and annotations to configurable all the necessary components. By default Atlas is configured to work seamlessly with [kube-prometheus-stack]() helm chart.
+
+Atlas uses services defined with external IPs to represent a downstream cluster, when properly annotated it will configure the system for accessing the downstream cluster securely. Once Atlas discovers a properly configured service, it will create a helm-values secret for properly deploying an envoy proxy on the downstream cluster.

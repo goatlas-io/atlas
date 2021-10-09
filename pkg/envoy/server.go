@@ -548,12 +548,12 @@ func (e *EnvoyADS) getClusters() ([]*atlasCluster, error) {
 		}
 
 		thanosService := common.ThanosFQDN
-		if v, ok := annotations[common.ThanosServiceLabel]; ok {
+		if v, ok := annotations[common.ThanosServiceAnnotation]; ok {
 			thanosService = v
 		}
 
 		prometheusService := common.PrometheusFQDN
-		if v, ok := annotations[common.PrometheusServiceLabel]; ok {
+		if v, ok := annotations[common.PrometheusServiceAnnotation]; ok {
 			prometheusService = v
 		}
 

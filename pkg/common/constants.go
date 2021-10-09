@@ -28,9 +28,12 @@ const (
 
 	// These are uses on a service to change the default service fqdn from the downstream
 	// cluster. This is mainly useful when the prometheus-operator is not being used.
-	ThanosServiceLabel       = "goatlas.io/thanos-service"
-	PrometheusServiceLabel   = "goatlas.io/prometheus-service"
-	AlertManagerServiceLabel = "goatlas.io/alertmanager-service"
+	ThanosServiceAnnotation           = "goatlas.io/thanos-service"
+	ThanosServicePortAnnotation       = "goatlas.io/thanos-service-port"
+	PrometheusServiceAnnotation       = "goatlas.io/prometheus-service"
+	PrometheusServicePortAnnotation   = "goatlas.io/prometheus-service-port"
+	AlertManagerServiceAnnotation     = "goatlas.io/alertmanager-service"
+	AlertManagerServicePortAnnotation = "goatlas.io/alertmanager-service-port"
 
 	ThanosFQDN       = "prometheus-operated.monitoring.svc.cluster.local"
 	ThanosPort       = 10901

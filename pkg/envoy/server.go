@@ -13,8 +13,8 @@ import (
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 
-	"github.com/ekristen/atlas/pkg/common"
-	"github.com/ekristen/atlas/pkg/config"
+	"github.com/goatlas-io/atlas/pkg/common"
+	"github.com/goatlas-io/atlas/pkg/config"
 
 	"github.com/rancher/wrangler/pkg/apply"
 	wranglercorev1 "github.com/rancher/wrangler/pkg/generated/controllers/core/v1"

@@ -37,9 +37,9 @@ import (
 	core "github.com/rancher/wrangler/pkg/generated/controllers/core/v1"
 	"github.com/rancher/wrangler/pkg/relatedresource"
 
-	"github.com/ekristen/atlas/pkg/common"
-	"github.com/ekristen/atlas/pkg/config"
-	"github.com/ekristen/atlas/pkg/envoy"
+	"github.com/goatlas-io/atlas/pkg/common"
+	"github.com/goatlas-io/atlas/pkg/config"
+	"github.com/goatlas-io/atlas/pkg/envoy"
 )
 
 //go:embed templates/*

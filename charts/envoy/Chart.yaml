@@ -8,5 +8,5 @@ keywords:
 - atlas
 name: envoy
 sources:
-- https://github.com/ekristen/atlas
+- https://github.com/goatlas-io/atlas
 version: 1.0.0

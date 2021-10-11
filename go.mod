@@ -1,4 +1,4 @@
-module github.com/ekristen/atlas
+module github.com/goatlas-io/atlas
 
 go 1.16
 

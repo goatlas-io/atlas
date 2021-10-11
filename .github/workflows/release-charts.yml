@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Helm charts
-        uses: stefanprodan/helm-gh-pages@master
+        uses: stefanprodan/helm-gh-pages@v1.4.1
         with:
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
           charts_url: https://charts.goatlas.io/

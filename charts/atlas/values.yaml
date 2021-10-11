@@ -12,6 +12,11 @@ rbac:
 metrics:
   enabled: true
 
+# This is a label selector for the service that represents the
+# alertmanager on the observability cluster.
+atlas:
+  alertmanagerSelector: "app=kube-prometheus-stack-alertmanager"
+
 controller:
   ports:
     grpc: 6305
@@ -29,10 +34,6 @@ coredns:
 
 envoyads:
   enabled: true
-  # This is a label selector for the service that represents the
-  # alertmanager on the observability cluster.
-  alertmanager:
-    selector: "app=kube-prometheus-stack-alertmanager"
   ingress:
     enabled: true
   host: envoyads.atlas.local

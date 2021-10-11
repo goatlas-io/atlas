@@ -21,5 +21,17 @@
         "^github.com/aws/aws-sdk-go-v2/.*"
       ]
     }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": [
+        "charts/.+.yaml$"
+      ],
+      "matchStrings": [
+        "appVersion:\\s(?<currentValue>.*)\\s?",
+        "image:\\srepository:\\s(?<depName>.*)\\stag:\\s(?<currentValue>.*)\\s?"
+      ],
+      "datasourceTemplate": "github-releases"
+    }
   ]
 }

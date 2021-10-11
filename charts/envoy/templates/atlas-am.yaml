@@ -1,0 +1,19 @@
+{{- range $i, $e := until (int .Values.atlas.alertmanagerCount) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager{{ $i }}
+spec:
+  ports:
+  - name: http
+    port: 11903
+    protocol: TCP
+    targetPort: 11903
+  selector:
+    app: envoy
+    release: {{ $.Release.Name }}
+  type: ClusterIP
+  clusterIP: None  
+{{- end }}
+

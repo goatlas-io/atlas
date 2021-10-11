@@ -14,9 +14,11 @@ jobs:
       - name: Publish Helm charts
         uses: stefanprodan/helm-gh-pages@master
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
           charts_url: https://charts.goatlas.io/
           owner: goatlas-io
           repository: charts
           branch: gh-pages
           target_dir: charts
+          commit_username: ekristen
+          commit_email: erik@erikkristensen.com

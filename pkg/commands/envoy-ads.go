@@ -100,7 +100,7 @@ func init() {
 		&cli.StringFlag{
 			Name:    "alertmanager-selector",
 			Usage:   "Label Selector for AlertManager",
-			EnvVars: []string{"ALERTMANAGER_SELECTOR"},
+			EnvVars: []string{"ATLAS_ALERTMANAGER_SELECTOR"},
 			Value:   common.ObservabilityAlertManagerServiceLabel,
 		},
 		&cli.StringFlag{

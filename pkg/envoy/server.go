@@ -73,6 +73,8 @@ type EnvoyADS struct {
 	servicesCache wranglercorev1.ServiceCache
 	secrets       wranglercorev1.SecretController
 	secretsCache  wranglercorev1.SecretCache
+
+	namespace string
 }
 
 func Register(
@@ -95,6 +97,7 @@ func Register(
 		apply:                    apply,
 		cli:                      cliCtx,
 		debugEnvoy:               false,
+		namespace:                cliCtx.String("namespace"),
 	}
 
 	return ads
@@ -156,7 +159,7 @@ func (e *EnvoyADS) secretOnChange(key string, secret *k8scorev1.Secret) (*k8scor
 
 func (e *EnvoyADS) serviceOnChange(key string, service *k8scorev1.Service) (*k8scorev1.Service, error) {
 	if service == nil {
-		if strings.Contains(key, common.MonitoringNamespace) {
+		if strings.Contains(key, e.namespace) {
 			if err := e.Sync(); err != nil {
 				e.log.WithError(err).Error("unable to sync")
 			}
@@ -200,22 +203,22 @@ func (e *EnvoyADS) Sync() error {
 func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) error {
 	actualAMServices := []*k8scorev1.Service{}
 
-	ca, err := e.secretsCache.Get(common.MonitoringNamespace, common.CASecretName)
+	ca, err := e.secretsCache.Get(e.namespace, common.CASecretName)
 	if err != nil {
 		return err
 	}
 
-	server, err := e.secretsCache.Get(common.MonitoringNamespace, common.ServerSecretName)
+	server, err := e.secretsCache.Get(e.namespace, common.ServerSecretName)
 	if err != nil {
 		return err
 	}
 
-	client, err := e.secretsCache.Get(common.MonitoringNamespace, common.ClientSecretName)
+	client, err := e.secretsCache.Get(e.namespace, common.ClientSecretName)
 	if err != nil {
 		return err
 	}
 
-	amServices, err := e.services.List(common.MonitoringNamespace, v1.ListOptions{
+	amServices, err := e.services.List(e.namespace, v1.ListOptions{
 		LabelSelector: e.cli.String("alertmanager-selector"),
 	})
 	if err != nil {
@@ -258,7 +261,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) erro
 		// Note: we do not send the client cert, because the is controlled by the
 		// static cluster definition for the xds_cluster for dynamic discovery.
 		dsclusterSecretResources := []types.Resource{
-			buildSecretTLSValidation("validation", combineCAs(ca)),
+			buildSecretTLSValidation("validation", CombineCAs(ca)),
 			buildSecretTLSCertificate("server", server.Data["tls.crt"], server.Data["tls.key"]),
 		}
 
@@ -288,7 +291,7 @@ func (e *EnvoyADS) SyncClusters(versionID string, clusters []*atlasCluster) erro
 		}
 
 		dsclusterSnapshot := cache.NewSnapshot(
-			versionID,
+			versionID,                // version of snapshot
 			[]types.Resource{},       // endpoints
 			dsclusterClusters,        // clusters
 			dsclusterRoutes,          // routes
@@ -322,23 +325,23 @@ func (e *EnvoyADS) SyncObservability(versionID string, clusters []*atlasCluster)
 		addClientSecret = true
 	}
 
-	ca, err := e.secretsCache.Get(common.MonitoringNamespace, common.CASecretName)
+	ca, err := e.secretsCache.Get(e.namespace, common.CASecretName)
 	if err != nil {
 		return err
 	}
 
-	server, err := e.secretsCache.Get(common.MonitoringNamespace, common.ServerSecretName)
+	server, err := e.secretsCache.Get(e.namespace, common.ServerSecretName)
 	if err != nil {
 		return err
 	}
 
-	client, err := e.secretsCache.Get(common.MonitoringNamespace, common.ClientSecretName)
+	client, err := e.secretsCache.Get(e.namespace, common.ClientSecretName)
 	if err != nil {
 		return err
 	}
 
 	secretResources := []types.Resource{
-		buildSecretTLSValidation("validation", combineCAs(ca)),
+		buildSecretTLSValidation("validation", CombineCAs(ca)),
 		buildSecretTLSCertificate("server", server.Data["tls.crt"], server.Data["tls.key"]),
 	}
 
@@ -526,7 +529,7 @@ func (e *EnvoyADS) getClusters() ([]*atlasCluster, error) {
 	}
 	selector := labels.NewSelector().Add(*requirement)
 
-	services, err := e.servicesCache.List(common.MonitoringNamespace, selector)
+	services, err := e.servicesCache.List(e.namespace, selector)
 	if err != nil {
 		return nil, err
 	}

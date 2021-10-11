@@ -1,0 +1,6 @@
+dependencies:
+- name: envoy
+  repository: https://charts.goatlas.io
+  version: 1.0.0
+digest: sha256:bfcdfc90c3124bee3bb7d6e732bd265e509d0ceecefa7b7cd34e5ead56fee657
+generated: "2021-10-11T17:34:17.140789-06:00"

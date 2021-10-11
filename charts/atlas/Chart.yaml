@@ -6,4 +6,4 @@ description: Atlas delivers automated secure communications between Prometheus a
 dependencies:
 - name: envoy
   version: 1.0.0
-  repository: https://ekristen.github.com/atlas/
+  repository: https://charts.goatlas.io

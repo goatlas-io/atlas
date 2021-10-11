@@ -16,9 +16,9 @@ jobs:
         with:
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
           charts_url: https://charts.goatlas.io/
+          charts_dir: charts
           owner: goatlas-io
           repository: charts
           branch: gh-pages
-          target_dir: charts
           commit_username: ekristen
           commit_email: erik@erikkristensen.com

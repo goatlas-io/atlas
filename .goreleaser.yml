@@ -1,6 +1,6 @@
 dist: release
 env:
-  - PACKAGE_NAME=github.com/ekristen/atlas
+  - PACKAGE_NAME=github.com/goatlas-io/atlas
   - SUMMARY={{ .Env.SUMMARY }}
   - VERSION={{ .Env.VERSION }}
   - BRANCH={{ .Env.BRANCH }}
@@ -10,7 +10,7 @@ before:
     - go mod tidy
 release:
   github:
-    owner: ekristen
+    owner: goatlas-io
     name: atlas
 builds:
   - id: linux
@@ -32,15 +32,14 @@ dockers:
     goarch: amd64
     dockerfile: Dockerfile.gorelease
     image_templates:
-      - ghcr.io/ekristen/atlas:latest
-      - ghcr.io/ekristen/atlas:{{ .Tag }}
+      - ghcr.io/goatlas-io/atlas:{{ .Tag }}
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source=https://github.com/ekristen/atlas"
+      - "--label=org.opencontainers.image.source=https://github.com/goatlas-io/atlas"
       - "--platform=linux/amd64"
 checksum:
   name_template: "checksums.txt"

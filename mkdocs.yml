@@ -1,7 +1,7 @@
 site_name: Atlas
-site_url: https://ekristen.github.io/atlas/
-repo_name: ekristen/atlas
-repo_url: https://github.com/ekristen/atlas
+site_url: https://goatlas.io/docs/
+repo_name: goatlas-io/atlas
+repo_url: https://github.com/goatlas-io/atlas
 edit_uri: ""
 
 site_dir: public

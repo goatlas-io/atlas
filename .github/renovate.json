@@ -20,6 +20,16 @@
       "matchPackagePatterns": [
         "^github.com/aws/aws-sdk-go-v2/.*"
       ]
+    },
+    {
+      "groupName": "atlas-envoy",
+      "groupSlug": "atlas-envoy",
+      "matchPackagePatterns": [
+        "envoy"
+      ],
+      "matchDatasources": [
+        "helm"
+      ]
     }
   ],
   "regexManagers": [
@@ -32,6 +42,16 @@
         "image:\\srepository:\\s(?<depName>.*)\\stag:\\s(?<currentValue>.*)\\s?"
       ],
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "fileMatch": [
+        ".*.tmpl$"
+      ],
+      "matchStrings": [
+        "chart:\\shttps://charts.goatlas.io/envoy-(?<currentValue>.*).tgz\\s?",
+        "spec:\\s+chart:\\s(?<depName>.*)\\s+version:\\s(?<currentValue>.*)\\s+?"
+      ],
+      "datasourceTemplate": "helm"
     }
   ]
 }

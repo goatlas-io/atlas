@@ -1,4 +1,7 @@
-replicaCount: 2
+atlas:
+  alertmanagerCount: 0
+
+replicaCount: 1
 
 podDisruptionBudget: |
   maxUnavailable: 1
@@ -9,7 +12,7 @@ terminationGracePeriodSeconds: 30
 strategy: |
   type: RollingUpdate
   rollingUpdate:
-    maxSurge: 2
+    maxSurge: 1
     maxUnavailable: 1
 
 image:
@@ -346,6 +349,3 @@ prometheusRule:
   ## Added to the PrometheusRule object so that prometheus-operator is able to discover it
   ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
   additionalLabels: {}
-
-atlas:
-  alertmanagerCount: 1

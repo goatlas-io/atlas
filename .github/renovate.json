@@ -51,7 +51,8 @@
         "chart:\\shttps://charts.goatlas.io/envoy-(?<currentValue>.*).tgz\\s?",
         "spec:\\s+chart:\\s(?<depName>.*)\\s+version:\\s(?<currentValue>.*)\\s+?"
       ],
-      "datasourceTemplate": "helm"
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://charts.goatlas.io"
     }
   ]
 }

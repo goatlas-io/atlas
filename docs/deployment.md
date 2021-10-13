@@ -140,6 +140,12 @@ Retrieve the downstream's helm values with the `atlas` or `kubectl`
 atlas cluster-values --name "downstream1" > downstream1.yaml
 ```
 
+**Note:** This command has `--format` option, the default is `raw` which is just values for helm. The other options are `helm-chart` and `helm-release`
+
+- `helm-chart` -- this is a feature from Rancher on K3S clusters
+- `helm-release` -- this is for Flux V2
+- `raw` -- just values for helm install/upgrade commands
+
 OR
 
 ```bash
@@ -151,8 +157,6 @@ Once you have the values, install helm on your downstream cluster. Make sure you
 ```bash
 helm install envoy --values downstream1.yaml chart/
 ```
-
-Please note that 
 
 ### Step 5. Repeat
 

@@ -55,21 +55,10 @@ jobs:
         id: extract_branch
       - name: Run GoReleaser for Tags
         uses: goreleaser/goreleaser-action@v2
-        if: startsWith(github.ref, 'refs/tags/v')
         with:
           distribution: goreleaser
           version: latest
           args: release --rm-dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: ${{ steps.extract_branch.outputs.branch }}
-      - name: Run GoReleaser for Non-Tags
-        uses: goreleaser/goreleaser-action@v2
-        if: startsWith(github.ref, 'refs/tags/v') == false
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --rm-dist --snapshot --skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: ${{ steps.extract_branch.outputs.branch }}

@@ -33,6 +33,7 @@ dockers:
     dockerfile: Dockerfile.gorelease
     image_templates:
       - ghcr.io/goatlas-io/atlas:{{ .Tag }}
+      - ghcr.io/goatlas-io/atlas:{{ .Branch }}-{{ .ShortCommit }}-{{ .Timestamp }}
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"

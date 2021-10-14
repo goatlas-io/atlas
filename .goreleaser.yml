@@ -41,7 +41,7 @@ dockers:
     goarch: amd64
     dockerfile: Dockerfile.gorelease
     image_templates:
-      - ghcr.io/goatlas-io/atlas:v{{ .Version }}
+      - ghcr.io/goatlas-io/atlas:{{ .Version }}
       - ghcr.io/goatlas-io/atlas:{{ .Branch }}-{{ .ShortCommit }}-{{ .Timestamp }}
     build_flag_templates:
       - "--pull"

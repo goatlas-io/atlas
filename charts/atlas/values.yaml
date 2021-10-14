@@ -1,6 +1,6 @@
 image:
-  repository: ghcr.io/ekristen/atlas
-  tag: v1.0.0
+  repository: ghcr.io/goatlas-io/atlas
+  tag: 0.1.1
   pullPolicy: IfNotPresent
   pullSecret: ""
 

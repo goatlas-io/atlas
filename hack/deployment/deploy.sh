@@ -94,43 +94,6 @@ controller:
 EOF
 }
 
-function setup_am {
-    local name=$1
-
-    cat > "$name/am.yaml" <<EOF
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: alertmanager0
-  namespace: $NAMESPACE
-spec:
-  ports:
-    - name: alertmanager
-      port: 11903
-      protocol: TCP
-      targetPort: alertmanager
-  selector:
-    app: envoy
-    release: atlas-envoy
-  type: ClusterIP
-status:
-  loadBalancer: {}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: additional-alertmanager-configs
-  namespace: $NAMESPACE
-stringData:
-  config.yaml: |
-    - static_configs:
-      - targets: ["alertmanager0.$NAMESPACE.svc.cluster.local:11903"]
-
-EOF
-
-}
-
 function setup_thanos {
   local obs_ip_address=$1
 
@@ -349,7 +312,7 @@ prometheus:
       name: prometheus-scrape-configs
     additionalAlertManagerConfigsSecret:
       key: config.yaml
-      name: additional-alertmanager-configs
+      name: atlas-alertmanager-configs
     replicaExternalLabelName: prometheus_replica
     prometheusExternalLabelName: prometheus_group
     replicas: 1

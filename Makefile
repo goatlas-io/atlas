@@ -1,5 +1,5 @@
 BRANCH := $(shell bash .ci/branch)
-SUMMARY := $(shell bash .ci/version)
+SUMMARY := $(shell SEP="-" bash .ci/version)
 VERSION := $(shell cat VERSION)
 NAME := $(shell basename `pwd`)
 MODULE := $(shell head -n1 go.mod | cut -f2 -d' ')
@@ -19,4 +19,4 @@ build:
 	SUMMARY=$(SUMMARY) VERSION=$(VERSION) BRANCH=$(BRANCH) goreleaser build
 
 snapshot:
-	SUMMARY=$(SUMMARY) VERSION=$(VERSION) BRANCH=$(BRANCH) goreleaser release --snapshot --skip-publish --rm-dist
+	GORELEASER_CURRENT_TAG=$(SUMMARY) SUMMARY=$(SUMMARY) VERSION=$(VERSION) BRANCH=$(BRANCH) goreleaser release --snapshot --skip-publish --rm-dist

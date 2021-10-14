@@ -32,7 +32,7 @@ jobs:
     needs:
       - version
     env:
-      SUMMARY: ${{ needs.version.outputs.version }}
+      SUMMARY: ${{ needs.version.outputs.docker-version }}
       VERSION: ${{ needs.version.outputs.version }}
     steps:
       - name: Checkout

@@ -22,6 +22,15 @@ builds:
       - goarch: 386
     ldflags:
       - -X {{.Env.PACKAGE_NAME}}/pkg/common.SUMMARY={{.Env.SUMMARY}} -X {{.Env.PACKAGE_NAME}}/pkg/common.BRANCH={{.Env.BRANCH}} -X {{.Env.PACKAGE_NAME}}/pkg/common.VERSION={{.Env.VERSION}}
+  - id: darwin
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    ignore:
+      - goarch: 386
+    ldflags:
+      - -X {{.Env.PACKAGE_NAME}}/pkg/common.SUMMARY={{.Env.SUMMARY}} -X {{.Env.PACKAGE_NAME}}/pkg/common.BRANCH={{.Env.BRANCH}} -X {{.Env.PACKAGE_NAME}}/pkg/common.VERSION={{.Env.VERSION}}
 archives:
   - replacements:
       386: i386

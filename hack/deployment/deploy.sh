@@ -476,7 +476,7 @@ function setup_observability {
 
     setup_atlas_values "$IP_ADDRESS"
 
-    helm upgrade --kubeconfig observability/kubeconfig.yaml -i -n $NAMESPACE --values observability/atlas-values.yaml atlas ../../chart
+    helm upgrade --kubeconfig observability/kubeconfig.yaml -i -n $NAMESPACE --values observability/atlas-values.yaml atlas ../../charts/atlas
 }
 
 function setup_downstream {
@@ -515,10 +515,6 @@ function setup_downstream {
     fi
 
     IP_ADDRESS=$(jq -r '.[0].networks.v4[0].ip_address' < "$name/droplet.json")
-
-    setup_am "$name"
-
-    KUBECONFIG="$name/kubeconfig.yaml" kubectl apply -f "$name/am.yaml"
     
     setup_downstream_prometheus "$name" "$IP_ADDRESS" "$(jq -r '.[0].networks.v4[0].ip_address' < observability/droplet.json)"
 
@@ -582,7 +578,7 @@ function config_cluster_envoy() {
     rm -f "$name/envoy-values.yaml"
     KUBECONFIG="observability/kubeconfig.yaml" kubectl get secret -n $NAMESPACE "$name-envoy-values" -o json | jq -r '.data["values.yaml"]' | base64 -D > "$name/envoy-values.yaml"
 
-    helm upgrade --kubeconfig "$name/kubeconfig.yaml" -i -n $NAMESPACE --values "$name/envoy-values.yaml" atlas-envoy stable/envoy
+    helm upgrade --kubeconfig "$name/kubeconfig.yaml" -i -n $NAMESPACE --values "$name/envoy-values.yaml" atlas-envoy ../../charts/envoy
 }
 
 function build_downstream_cluster() {

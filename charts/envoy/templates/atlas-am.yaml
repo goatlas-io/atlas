@@ -16,4 +16,18 @@ spec:
   type: ClusterIP
   clusterIP: None  
 {{- end }}
-
+{{- if gt (int .Values.atlas.alertmanagerCount) 0 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: atlas-alertmanager-configs
+  namespace: $NAMESPACE
+stringData:
+  config.yaml: |
+    - static_configs:
+      - targets:
+{{- range $i, $e := until (int .Values.atlas.alertmanagerCount) }}
+        - alertmanager{{ $i }}.$NAMESPACE.svc.cluster.local:11903
+{{- end }}
+{{- end }}

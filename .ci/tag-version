@@ -2,7 +2,7 @@
 
 TAG=${1}
 VALID_TAG=false
-MASTER_ONLY=true
+MAIN_ONLY=true
 
 if [ "x${TAG}" == "x" ]; then
   echo "You must specify a tag"
@@ -23,16 +23,16 @@ fi
 
 if echo "${TAG}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$"; then
   VALID_TAG=true
-  MASTER_ONLY=false
+  MAIN_ONLY=false
 fi
 
 if echo "${TAG}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$"; then
   VALID_TAG=true
-  MASTER_ONLY=false
+  MAIN_ONLY=false
 fi
 
-if [ "${BRANCH}" != "master" ] && [ "${MASTER_ONLY}" == "true" ]; then
-  echo "You must only be on the master branch"
+if [ "${BRANCH}" != "main" ] && [ "${MAIN_ONLY}" == "true" ]; then
+  echo "You must only be on the main branch"
   exit 12
 fi
 

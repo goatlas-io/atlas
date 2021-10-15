@@ -1,7 +1,7 @@
 apiVersion: v2
 name: atlas
 version: 1.0.0
-appVersion: 0.2.0
+appVersion: 0.2.1
 description: Atlas delivers automated secure communications between Prometheus and Thanos Sidecars.
 dependencies:
 - name: envoy

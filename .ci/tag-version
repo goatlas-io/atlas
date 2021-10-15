@@ -49,7 +49,7 @@ echo "$TAG" > VERSION
 if [ -f charts/atlas/Chart.yaml ]; then
   sed -i.bak "s/appVersion: .*/appVersion: ${TAG}/g" charts/atlas/Chart.yaml
   sed -i.bak "s/tag: .*/tag: ${VTAG}/g" charts/atlas/values.yaml
-  rm chart/*.bak
+  rm charts/atlas/*.bak
 fi
 
 if [ -f pkg/common/version.go ]; then

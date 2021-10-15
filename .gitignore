@@ -14,3 +14,4 @@ chart/charts/*.tgz
 droplet.json
 envoy-values.yaml
 helm-values.yaml
+*.bak

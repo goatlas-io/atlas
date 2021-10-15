@@ -6,10 +6,6 @@ args:
   - info
   - -c
   - /config/envoy.yaml
-image:
-  repository: envoyproxy/envoy
-  tag: v1.18.3
-  pullPolicy: IfNotPresent
 service:
   enabled: true
   ports:

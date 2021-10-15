@@ -54,10 +54,6 @@ envoy:
     - info
     - -c
     - /config/envoy.yaml
-  image:
-    repository: envoyproxy/envoy
-    tag: v0.2.1
-    pullPolicy: IfNotPresent
   service:
     enabled: true
     ports:

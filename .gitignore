@@ -2,6 +2,8 @@
 vendor
 hack/deployment/**/*.json
 hack/deployment/**/*.yaml
+examples/demo*/**/*.json
+examples/demo*/**/*.yaml
 charts/**/*.tgz
 release
 archive

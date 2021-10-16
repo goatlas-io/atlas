@@ -11,12 +11,6 @@ DO_SIZE=${DO_SIZE:="s-2vcpu-4gb"}
 DO_IMAGE=${DO_IMAGE:="ubuntu-20-04-x64"}
 DIGITALOCEAN_SSH_KEYS=${DIGITALOCEAN_SSH_KEYS:-""}
 
-HELM_TAG=${HELM_TAG:="master-5f87f6a"}
-HELM_PULLSECRET=${HELM_PULLSECRET:=""}
-
-GITHUB_USERNAME=${GITHUB_USERNAME:-""}
-GITHUB_TOKEN=${GITHUB_TOKEN:-""}
-
 NAMESPACE=${NAMESPACE:="monitoring"}
 
 THANOS_VERSION=${THANOS_VERSION:="v0.23.1"}
@@ -78,12 +72,6 @@ function setup_atlas_values {
   local ip_address=$1
 
   cat > "observability/atlas-values.yaml" <<EOF
-image:
-  repository: ghcr.io/ekristen/atlas
-  tag: $HELM_TAG
-  pullPolicy: Always
-  pullSecret: $HELM_PULLSECRET
-
 envoyads:
   host: envoy-ads.$ip_address.nip.io
 
@@ -419,12 +407,6 @@ function setup_observability {
         KUBECONFIG=observability/kubeconfig.yaml kubectl create ns $NAMESPACE
     fi
 
-    if [ -n "$GITHUB_USERNAME" ] && [ -n "$GITHUB_TOKEN" ]; then
-      if ! KUBECONFIG=observability/kubeconfig.yaml kubectl get secret github -n $NAMESPACE; then
-          KUBECONFIG=observability/kubeconfig.yaml kubectl create secret docker-registry github --docker-server=https://ghcr.io --docker-username="$GITHUB_USERNAME" --docker-password="$GITHUB_TOKEN" -n "$NAMESPACE"
-      fi
-    fi
-
     IP_ADDRESS=$(jq -r '.[0].networks.v4[0].ip_address' < observability/droplet.json)
 
     setup_observability_prometheus "$IP_ADDRESS"
@@ -469,12 +451,6 @@ function setup_downstream {
 
     if ! KUBECONFIG="$name/kubeconfig.yaml" kubectl get namespace $NAMESPACE; then
         KUBECONFIG="$name/kubeconfig.yaml" kubectl create ns $NAMESPACE
-    fi
-
-    if [ -n "$GITHUB_USERNAME" ] && [ -n "$GITHUB_TOKEN" ]; then
-      if ! KUBECONFIG=observability/kubeconfig.yaml kubectl get secret github -n $NAMESPACE; then
-          KUBECONFIG=observability/kubeconfig.yaml kubectl create secret docker-registry github --docker-server=https://ghcr.io --docker-username="$GITHUB_USERNAME" --docker-password="$GITHUB_TOKEN" -n "$NAMESPACE"
-      fi
     fi
 
     IP_ADDRESS=$(jq -r '.[0].networks.v4[0].ip_address' < "$name/droplet.json")

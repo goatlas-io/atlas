@@ -4,6 +4,8 @@ The easiest way to get started is to take the [deploy script](examples/demo-do/d
 
 To use this script you'll need a Digital Ocean API token. Once you have acquired the token, simply export `DIGITALOCEAN_ACCESS_TOKEN` to your shell and then from the root of the Atlas project run the following ...
 
+## Go Time
+
 ```bash
 bash examples/demo-do/deploy.sh up
 ```
@@ -17,6 +19,45 @@ This script will deploy four clusters:
 
 Once the script is done running a set of details will be printed to the screen. If you want to see the details again simply re-run the script with `details` instead of `up`.
 
-The details output will give you all the urls to the various components that can be interacted with on the observability cluster and the downstream clusters.
+The details output will give you all the urls to the various components that can be interacted with on the observability cluster and the downstream clusters, see below for more details.
+
+Generally speaking by the time the details page shows up downstream1 and downstream2 will already be connected. Downstream3 will still be in the process of coming online, but should only take another minute or two at most.
+
+## Details
+
+In general your details will look something like the following ...
+
+```text
+IP Addresses
+-----------------------------------------
+Observability: 143.198.182.161
+  Downstream1: 198.211.117.92
+  Downstream2: 143.244.174.92
+  Downstream3: 137.184.97.135
+
+Observability Cluster
+------------------------------------------
+thanos-query: http://thanos-query.143.198.182.161.nip.io
+  prometheus: http://prometheus.143.198.182.161.nip.io
+      alerts: http://alerts.143.198.182.161.nip.io
+
+Accessing Downstream through Observability Cluster:
+
+Note: these use the Envoy Proxy Network provided by Atlas to allow secure
+communications to downstream cluster components.
+
+ downstream1: http://thanos-query.143.198.182.161.nip.io/prom/downstream1/graph
+ downstream2: http://thanos-query.143.198.182.161.nip.io/prom/downstream2/graph
+ downstream3: http://thanos-query.143.198.182.161.nip.io/prom/downstream3/graph
+
+Important: In a real-world scenario you'd gate access to thanos-query via an oauth2 proxy
+or it would only be accessible on an internal network!
+```
+
+The link to thanos-query in the observability cluster is how you can see your thanos query connected to the sidecars.
+
+The downstream1-3 links all use the thanos-query and the ingress path prefix that allows accessing of the downstream clusters from the observability cluster. You can confirm this by going to each link and pulling up the prometheus configuration, you'll see the external labels differ for each one.
+
+## Cleanup
 
 When you are all done, `bash examples/demo-do/depoy.sh down` to tear it all down.

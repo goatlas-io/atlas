@@ -4,7 +4,7 @@ The easiest way to get started is to take the [deploy script](examples/demo-do/d
 
 To use this script you'll need a Digital Ocean API token. Once you have acquired the token, simply export `DIGITALOCEAN_ACCESS_TOKEN` to your shell and then from the root of the Atlas project run the following ...
 
-## Prelight
+## Preflight
 
 1. Obtain a Digital Ocean Access Token
 2. Obtain the SSH Key ID of your SSH key in Digital Ocean

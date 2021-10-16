@@ -1,8 +1,11 @@
 # Quick Start (aka Demo using Digital Ocean)
 
-The easiest way to get started is to take the [deploy script](examples/demo-do/deploy.sh) for a spin. It requires a Digital Ocean account.
+!!! important
+    This script requires a Digital Ocean account.
 
-To use this script you'll need a Digital Ocean API token. Once you have acquired the token, simply export `DIGITALOCEAN_ACCESS_TOKEN` to your shell and then from the root of the Atlas project run the following ...
+The easiest way to get started is to take the [deploy script](examples/demo-do/deploy.sh) for a spin.
+
+This script spins up a fully working Atlas deployment with Prometheus and Thanos on several downstream clusters and automatically configures the downstream clusters for secure communication.
 
 ## Preflight
 

@@ -14,7 +14,7 @@ To use this script you'll need a Digital Ocean API token. Once you have acquired
 !!! note
     I'd highly recommend the use of [direnv](https://direnv.net) for managing environment variables throughout directories.
 
-## Deploy Time
+## Deploy
 
 ```bash
 bash examples/demo-do/deploy.sh up
@@ -71,6 +71,6 @@ The link to thanos-query in the observability cluster is how you can see your th
 
 The downstream1-3 links all use the thanos-query and the ingress path prefix that allows accessing of the downstream clusters from the observability cluster. You can confirm this by going to each link and pulling up the prometheus configuration, you'll see the external labels differ for each one.
 
-## Cleanup
+## Teardown
 
 When you are all done, `bash examples/demo-do/depoy.sh down` to tear it all down.

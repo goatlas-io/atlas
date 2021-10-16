@@ -53,7 +53,7 @@ dockers:
 checksum:
   name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ .Tag }}"
+  name_template: "{{ .Env.BRANCH }}-{{ .ShortCommit }}-{{ .Timestamp }}"
 changelog:
   sort: asc
   filters:

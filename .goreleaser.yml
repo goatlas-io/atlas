@@ -41,7 +41,7 @@ dockers:
     goarch: amd64
     dockerfile: Dockerfile.gorelease
     image_templates:
-      - ghcr.io/goatlas-io/atlas:{{ .Version }}
+      - ghcr.io/goatlas-io/atlas:{{- if .IsSnapshot -}}{{ .Version }}{{- else -}}{{ .Tag }}{{- end -}}
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"

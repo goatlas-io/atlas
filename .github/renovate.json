@@ -14,14 +14,6 @@
       ]
     },
     {
-      "matchDatasources": [
-        "go"
-      ],
-      "matchPackagePatterns": [
-        "^github.com/aws/aws-sdk-go-v2/.*"
-      ]
-    },
-    {
       "groupName": "atlas-envoy",
       "groupSlug": "atlas-envoy",
       "matchPackagePatterns": [

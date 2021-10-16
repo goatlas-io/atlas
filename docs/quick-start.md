@@ -4,11 +4,24 @@ The easiest way to get started is to take the [deploy script](examples/demo-do/d
 
 To use this script you'll need a Digital Ocean API token. Once you have acquired the token, simply export `DIGITALOCEAN_ACCESS_TOKEN` to your shell and then from the root of the Atlas project run the following ...
 
-## Go Time
+## Prelight
+
+1. Obtain a Digital Ocean Access Token
+2. Obtain the SSH Key ID of your SSH key in Digital Ocean
+3. `export DIGITALOCEAN_ACCESS_TOKEN=<access-token>`
+4. `export DIGITALOCEAN_SSH_KEYS=<key-id>`
+
+!!! note
+    I'd highly recommend the use of [direnv](https://direnv.net) for managing environment variables throughout directories.
+
+## Deploy Time
 
 ```bash
 bash examples/demo-do/deploy.sh up
 ```
+
+!!! note
+    This script takes approximately 5-7 minutes to run, depending on how fast Digital Ocean is. It's spinning up a total of 4 servers and installing [k3s](https://k3s.io), then using helm to install the necessary components like prometheus, thanos, envoy and atlas on the various servers.
 
 This script will deploy four clusters:
 

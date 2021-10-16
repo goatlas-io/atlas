@@ -5,5 +5,5 @@ appVersion: 0.2.1
 description: Atlas delivers automated secure communications between Prometheus and Thanos Sidecars.
 dependencies:
 - name: envoy
-  version: 1.2.0
+  version: 1.2.1
   repository: https://charts.goatlas.io

@@ -18,7 +18,7 @@ Atlas should only be installed to the **observability** cluster. All downstream 
 
 It is recommended you use the same namespace like `monitoring` for the deployment of Prometheus and Atlas.
 
-How you deploy Prometheus with the Thanos Sidecar is up to you, however I would recommend simply using the [kube-prometheus-stack]() helm chart as it makes this process very simple and takes care of the more complicated bits for you. If you want Thanos persisting to S3 you can pass your S3 credentials along as well.
+How you deploy Prometheus with the Thanos Sidecar is up to you, however I would recommend simply using the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) helm chart as it makes this process very simple and takes care of the more complicated bits for you. If you want Thanos persisting to S3 you can pass your S3 credentials along as well.
 
 !!! note
     When using `kube-prometheus-stack` ensure `servicePerReplica` is enabled for both prometheus and alertmanager sections, this will allow proper routing to each individual instance.

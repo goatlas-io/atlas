@@ -9,4 +9,4 @@ keywords:
 name: envoy
 sources:
 - https://github.com/goatlas-io/atlas
-version: 1.2.0
+version: 1.2.1

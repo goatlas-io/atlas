@@ -130,7 +130,7 @@ spec:
 atlas cluster-add --name "downstream1" --replicas 1 --external-ip "1.1.1.1" 
 ```
 
-### Step 4. Deploy Envoy on Downstream Cluster
+## Step 4. Deploy Envoy on Downstream Cluster
 
 Atlas generates helm values for the Atlas Envoy Helm Chart for every downstream cluster added. These values come with the necessary seed values to allow initial secure connections to be established. Once comms are established the Envoy Aggreggated Discovery capabilites take over ensuring the downstream envoy instance stays configure properly.
 
@@ -158,11 +158,11 @@ Once you have the values, install helm on your downstream cluster. Make sure you
 helm install envoy --values downstream1.yaml chart/
 ```
 
-### Step 5. Repeat
+## Step 5. Repeat
 
 If you have more than one downstream cluster, repeast steps 3 and 4 until you've added all your clusters.
 
-### Step 6. Configure Downstream Prometheus for Observability Alertmanagers
+## Step 6. Configure Downstream Prometheus for Observability Alertmanagers
 
 To take full advantage of what Atlas offers, you can configure your downstream prometheus instances to talk to the alertmanagers in the observability cluster.
 

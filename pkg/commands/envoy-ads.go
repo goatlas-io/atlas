@@ -15,10 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/ekristen/atlas/pkg/common"
-	"github.com/ekristen/atlas/pkg/config"
-	"github.com/ekristen/atlas/pkg/envoy"
-	"github.com/ekristen/atlas/pkg/metrics"
+	"github.com/goatlas-io/atlas/pkg/common"
+	"github.com/goatlas-io/atlas/pkg/config"
+	"github.com/goatlas-io/atlas/pkg/envoy"
+	"github.com/goatlas-io/atlas/pkg/metrics"
 )
 
 type envoyADSCommand struct{}
@@ -100,7 +100,7 @@ func init() {
 		&cli.StringFlag{
 			Name:    "alertmanager-selector",
 			Usage:   "Label Selector for AlertManager",
-			EnvVars: []string{"ALERTMANAGER_SELECTOR"},
+			EnvVars: []string{"ATLAS_ALERTMANAGER_SELECTOR"},
 			Value:   common.ObservabilityAlertManagerServiceLabel,
 		},
 		&cli.StringFlag{

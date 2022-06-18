@@ -1,6 +1,0 @@
-dependencies:
-- name: envoy
-  repository: https://charts.helm.sh/stable/
-  version: 1.9.4
-digest: sha256:6308d164e7da4f068dfe73583eb5c99def7e2dc505d1e9e12d55e42aeaeb1bc0
-generated: "2021-09-06T12:01:14.803655-06:00"

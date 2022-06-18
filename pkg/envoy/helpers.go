@@ -334,7 +334,7 @@ func buildSecretTLSValidation(name string, ca []byte) *tls.Secret {
 	}
 }
 
-func combineCAs(ca *k8scorev1.Secret) []byte {
+func CombineCAs(ca *k8scorev1.Secret) []byte {
 	cas := [][]byte{}
 	sep := []byte("\n")
 	for k, v := range ca.Data {

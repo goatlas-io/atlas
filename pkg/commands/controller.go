@@ -14,10 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/ekristen/atlas/pkg/common"
-	"github.com/ekristen/atlas/pkg/config"
-	"github.com/ekristen/atlas/pkg/controllers/atlas"
-	"github.com/ekristen/atlas/pkg/metrics"
+	"github.com/goatlas-io/atlas/pkg/common"
+	"github.com/goatlas-io/atlas/pkg/config"
+	"github.com/goatlas-io/atlas/pkg/controllers/atlas"
+	"github.com/goatlas-io/atlas/pkg/metrics"
 )
 
 type controlCommand struct{}

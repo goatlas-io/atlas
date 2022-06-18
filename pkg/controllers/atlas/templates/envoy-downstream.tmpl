@@ -1,13 +1,11 @@
+atlas:
+  alertmanagerCount: {{ .AlertmanagerCount }}
 replicaCount: 1
 args:
   - -l
   - info
   - -c
   - /config/envoy.yaml
-image:
-  repository: envoyproxy/envoy
-  tag: v1.18.3
-  pullPolicy: IfNotPresent
 service:
   enabled: true
   ports:

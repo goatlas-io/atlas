@@ -1,6 +1,6 @@
 image:
-  repository: ghcr.io/ekristen/atlas
-  tag: v1.0.0
+  repository: ghcr.io/goatlas-io/atlas
+  tag: v0.3.1
   pullPolicy: IfNotPresent
   pullSecret: ""
 
@@ -11,6 +11,11 @@ rbac:
 
 metrics:
   enabled: true
+
+# This is a label selector for the service that represents the
+# alertmanager on the observability cluster.
+atlas:
+  alertmanagerSelector: "app=kube-prometheus-stack-alertmanager"
 
 controller:
   ports:
@@ -29,10 +34,6 @@ coredns:
 
 envoyads:
   enabled: true
-  # This is a label selector for the service that represents the
-  # alertmanager on the observability cluster.
-  alertmanager:
-    selector: "app=kube-prometheus-stack-alertmanager"
   ingress:
     enabled: true
   host: envoyads.atlas.local
@@ -53,10 +54,6 @@ envoy:
     - info
     - -c
     - /config/envoy.yaml
-  image:
-    repository: envoyproxy/envoy
-    tag: v1.18.3
-    pullPolicy: IfNotPresent
   service:
     enabled: true
     ports:

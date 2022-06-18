@@ -11,12 +11,6 @@ DO_SIZE=${DO_SIZE:="s-2vcpu-4gb"}
 DO_IMAGE=${DO_IMAGE:="ubuntu-20-04-x64"}
 DIGITALOCEAN_SSH_KEYS=${DIGITALOCEAN_SSH_KEYS:-""}
 
-HELM_TAG=${HELM_TAG:="master-5f87f6a"}
-HELM_PULLSECRET=${HELM_PULLSECRET:=""}
-
-GITHUB_USERNAME=${GITHUB_USERNAME:-""}
-GITHUB_TOKEN=${GITHUB_TOKEN:-""}
-
 NAMESPACE=${NAMESPACE:="monitoring"}
 
 THANOS_VERSION=${THANOS_VERSION:="v0.23.1"}
@@ -78,12 +72,6 @@ function setup_atlas_values {
   local ip_address=$1
 
   cat > "observability/atlas-values.yaml" <<EOF
-image:
-  repository: ghcr.io/ekristen/atlas
-  tag: $HELM_TAG
-  pullPolicy: Always
-  pullSecret: $HELM_PULLSECRET
-
 envoyads:
   host: envoy-ads.$ip_address.nip.io
 
@@ -92,43 +80,6 @@ controller:
     host: envoy.$ip_address.nip.io
 
 EOF
-}
-
-function setup_am {
-    local name=$1
-
-    cat > "$name/am.yaml" <<EOF
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: alertmanager0
-  namespace: $NAMESPACE
-spec:
-  ports:
-    - name: alertmanager
-      port: 11903
-      protocol: TCP
-      targetPort: alertmanager
-  selector:
-    app: envoy
-    release: atlas-envoy
-  type: ClusterIP
-status:
-  loadBalancer: {}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: additional-alertmanager-configs
-  namespace: $NAMESPACE
-stringData:
-  config.yaml: |
-    - static_configs:
-      - targets: ["alertmanager0.$NAMESPACE.svc.cluster.local:11903"]
-
-EOF
-
 }
 
 function setup_thanos {
@@ -349,7 +300,7 @@ prometheus:
       name: prometheus-scrape-configs
     additionalAlertManagerConfigsSecret:
       key: config.yaml
-      name: additional-alertmanager-configs
+      name: atlas-alertmanager-configs
     replicaExternalLabelName: prometheus_replica
     prometheusExternalLabelName: prometheus_group
     replicas: 1
@@ -456,12 +407,6 @@ function setup_observability {
         KUBECONFIG=observability/kubeconfig.yaml kubectl create ns $NAMESPACE
     fi
 
-    if [ -n "$GITHUB_USERNAME" ] && [ -n "$GITHUB_TOKEN" ]; then
-      if ! KUBECONFIG=observability/kubeconfig.yaml kubectl get secret github -n $NAMESPACE; then
-          KUBECONFIG=observability/kubeconfig.yaml kubectl create secret docker-registry github --docker-server=https://ghcr.io --docker-username="$GITHUB_USERNAME" --docker-password="$GITHUB_TOKEN" -n "$NAMESPACE"
-      fi
-    fi
-
     IP_ADDRESS=$(jq -r '.[0].networks.v4[0].ip_address' < observability/droplet.json)
 
     setup_observability_prometheus "$IP_ADDRESS"
@@ -476,7 +421,7 @@ function setup_observability {
 
     setup_atlas_values "$IP_ADDRESS"
 
-    helm upgrade --kubeconfig observability/kubeconfig.yaml -i -n $NAMESPACE --values observability/atlas-values.yaml atlas ../../chart
+    helm upgrade --kubeconfig observability/kubeconfig.yaml -i -n $NAMESPACE --values observability/atlas-values.yaml atlas ../../charts/atlas
 }
 
 function setup_downstream {
@@ -508,17 +453,7 @@ function setup_downstream {
         KUBECONFIG="$name/kubeconfig.yaml" kubectl create ns $NAMESPACE
     fi
 
-    if [ -n "$GITHUB_USERNAME" ] && [ -n "$GITHUB_TOKEN" ]; then
-      if ! KUBECONFIG=observability/kubeconfig.yaml kubectl get secret github -n $NAMESPACE; then
-          KUBECONFIG=observability/kubeconfig.yaml kubectl create secret docker-registry github --docker-server=https://ghcr.io --docker-username="$GITHUB_USERNAME" --docker-password="$GITHUB_TOKEN" -n "$NAMESPACE"
-      fi
-    fi
-
     IP_ADDRESS=$(jq -r '.[0].networks.v4[0].ip_address' < "$name/droplet.json")
-
-    setup_am "$name"
-
-    KUBECONFIG="$name/kubeconfig.yaml" kubectl apply -f "$name/am.yaml"
     
     setup_downstream_prometheus "$name" "$IP_ADDRESS" "$(jq -r '.[0].networks.v4[0].ip_address' < observability/droplet.json)"
 
@@ -582,7 +517,7 @@ function config_cluster_envoy() {
     rm -f "$name/envoy-values.yaml"
     KUBECONFIG="observability/kubeconfig.yaml" kubectl get secret -n $NAMESPACE "$name-envoy-values" -o json | jq -r '.data["values.yaml"]' | base64 -D > "$name/envoy-values.yaml"
 
-    helm upgrade --kubeconfig "$name/kubeconfig.yaml" -i -n $NAMESPACE --values "$name/envoy-values.yaml" atlas-envoy stable/envoy
+    helm upgrade --kubeconfig "$name/kubeconfig.yaml" -i -n $NAMESPACE --values "$name/envoy-values.yaml" atlas-envoy ../../charts/envoy
 }
 
 function build_downstream_cluster() {

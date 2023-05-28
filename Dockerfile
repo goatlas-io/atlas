@@ -1,5 +1,5 @@
 # Stage 1 - Go, Build the Binary
-FROM golang:1.16.6 as go-builder
+FROM golang:1.20.4 as go-builder
 WORKDIR /src/atlas
 ENV GO111MODULE=on
 COPY . /src/atlas

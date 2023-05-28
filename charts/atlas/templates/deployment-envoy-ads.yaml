@@ -74,6 +74,8 @@ spec:
         env:
           - name: ATLAS_ENVOY_ADDRESS
             value: {{ .Values.controller.envoy.host }}
+          - name: ATLAS_ALERTMANAGER_SELECTOR
+            value: {{ .Values.atlas.alertmanagerSelector }}
 {{- if .Values.envoyads.resources }}
         resources:
 {{ toYaml .Values.envoyads.resources | indent 10 }}

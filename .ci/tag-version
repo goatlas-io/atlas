@@ -2,7 +2,7 @@
 
 TAG=${1}
 VALID_TAG=false
-MASTER_ONLY=true
+MAIN_ONLY=true
 
 if [ "x${TAG}" == "x" ]; then
   echo "You must specify a tag"
@@ -23,16 +23,16 @@ fi
 
 if echo "${TAG}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$"; then
   VALID_TAG=true
-  MASTER_ONLY=false
+  MAIN_ONLY=false
 fi
 
 if echo "${TAG}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$"; then
   VALID_TAG=true
-  MASTER_ONLY=false
+  MAIN_ONLY=false
 fi
 
-if [ "${BRANCH}" != "master" ] && [ "${MASTER_ONLY}" == "true" ]; then
-  echo "You must only be on the master branch"
+if [ "${BRANCH}" != "main" ] && [ "${MAIN_ONLY}" == "true" ]; then
+  echo "You must only be on the main branch"
   exit 12
 fi
 
@@ -46,10 +46,10 @@ MSG="version: ${TAG}"
 
 echo "$TAG" > VERSION
 
-if [ -f chart/Chart.yaml ]; then
-  sed -i.bak "s/appVersion: .*/appVersion: ${TAG}/g" chart/Chart.yaml
-  sed -i.bak "s/tag: .*/tag: ${VTAG}/g" chart/values.yaml
-  rm chart/*.bak
+if [ -f charts/atlas/Chart.yaml ]; then
+  sed -i.bak "s/appVersion: .*/appVersion: ${TAG}/g" charts/atlas/Chart.yaml
+  sed -i.bak "s/tag: .*/tag: ${VTAG}/g" charts/atlas/values.yaml
+  rm charts/atlas/*.bak
 fi
 
 if [ -f pkg/common/version.go ]; then

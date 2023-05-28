@@ -14,12 +14,37 @@
       ]
     },
     {
-      "matchDatasources": [
-        "go"
-      ],
+      "groupName": "atlas-envoy",
+      "groupSlug": "atlas-envoy",
       "matchPackagePatterns": [
-        "^github.com/aws/aws-sdk-go-v2/.*"
+        "envoy"
+      ],
+      "matchDatasources": [
+        "helm"
       ]
+    }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": [
+        "charts/.+.yaml$"
+      ],
+      "matchStrings": [
+        "appVersion:\\s(?<currentValue>.*)\\s?",
+        "image:\\srepository:\\s(?<depName>.*)\\stag:\\s(?<currentValue>.*)\\s?"
+      ],
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "fileMatch": [
+        ".*.tmpl$"
+      ],
+      "matchStrings": [
+        "chart:\\shttps://charts.goatlas.io/envoy-(?<currentValue>.*).tgz\\s?",
+        "spec:\\s+chart:\\s(?<depName>.*)\\s+version:\\s(?<currentValue>.*)\\s+?"
+      ],
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://charts.goatlas.io"
     }
   ]
 }

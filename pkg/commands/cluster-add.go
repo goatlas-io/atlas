@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/ekristen/atlas/pkg/common"
+	"github.com/goatlas-io/atlas/pkg/common"
 )
 
 type clusterAddCommand struct {

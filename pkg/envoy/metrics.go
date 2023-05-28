@@ -1,7 +1,7 @@
 package envoy
 
 import (
-	"github.com/ekristen/atlas/pkg/metrics"
+	"github.com/goatlas-io/atlas/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

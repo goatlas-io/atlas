@@ -5,6 +5,6 @@ metadata:
   name: atlas-envoy
   namespace: {{ .Namespace }}
 spec:
-  chart: https://charts.helm.sh/stable/packages/envoy-1.9.4.tgz
+  chart: https://charts.goatlas.io/envoy-1.0.1.tgz
   valuesContent: |
 {{ .Values | indent 4 }}

@@ -1,0 +1,62 @@
+dist: release
+env:
+  - PACKAGE_NAME=github.com/goatlas-io/atlas
+  - SUMMARY={{ .Env.SUMMARY }}
+  - VERSION={{ .Env.VERSION }}
+  - BRANCH={{ .Env.BRANCH }}
+before:
+  hooks:
+    - go mod vendor
+    - go mod tidy
+release:
+  github:
+    owner: goatlas-io
+    name: atlas
+builds:
+  - id: linux
+    goos:
+      - linux
+    goarch:
+      - amd64
+    ignore:
+      - goarch: 386
+    ldflags:
+      - -X {{.Env.PACKAGE_NAME}}/pkg/common.SUMMARY={{.Env.SUMMARY}} -X {{.Env.PACKAGE_NAME}}/pkg/common.BRANCH={{.Env.BRANCH}} -X {{.Env.PACKAGE_NAME}}/pkg/common.VERSION={{.Env.VERSION}}
+  - id: darwin
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    ignore:
+      - goarch: 386
+    ldflags:
+      - -X {{.Env.PACKAGE_NAME}}/pkg/common.SUMMARY={{.Env.SUMMARY}} -X {{.Env.PACKAGE_NAME}}/pkg/common.BRANCH={{.Env.BRANCH}} -X {{.Env.PACKAGE_NAME}}/pkg/common.VERSION={{.Env.VERSION}}
+archives:
+  - replacements:
+      386: i386
+      amd64: x86_64
+dockers:
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile.gorelease
+    image_templates:
+      - ghcr.io/goatlas-io/atlas:{{- if .IsSnapshot -}}{{ .Version }}{{- else -}}{{ .Tag }}{{- end -}}
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source=https://github.com/goatlas-io/atlas"
+      - "--platform=linux/amd64"
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ .Env.BRANCH }}-{{ .ShortCommit }}-{{ .Timestamp }}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

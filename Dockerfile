@@ -1,5 +1,5 @@
 # Stage 1 - Go, Build the Binary
-FROM golang:1.16.6 as go-builder
+FROM golang:1.20.4 as go-builder
 WORKDIR /src/atlas
 ENV GO111MODULE=on
 COPY . /src/atlas
@@ -16,7 +16,7 @@ RUN curl --fail -sLo /tini https://github.com/krallin/tini/releases/download/${T
 FROM debian:stretch-slim
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/atlas"]
 
-RUN apt-get update && apt-get install -y ca-certificates liblz4-1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN useradd -r -u 999 -d /home/atlas atlas
 
 COPY --from=binaries /tini /usr/bin/tini

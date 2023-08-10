@@ -7,8 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	_ "github.com/ekristen/atlas/pkg/commands"
-	"github.com/ekristen/atlas/pkg/common"
+	_ "github.com/goatlas-io/atlas/pkg/commands"
+	"github.com/goatlas-io/atlas/pkg/common"
 )
 
 func main() {

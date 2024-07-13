@@ -4,11 +4,24 @@ You should have at least two clusters to take full advantage of Atlas. One to ac
 
 Atlas should only be installed to the **observability** cluster. All downstream clusters will need an envoy instance deployed, Atlas will provide the necessary helm values to configure the downstream clusters.
 
-## Step 0. Deploy Prometheus with Thanos Sidecar
+!!! important
+    It is **HIGHLY** recommend using the same namespace for your observability components, it makes deployment management much easier. The default for atlas is `monitoring`.
+
+## Requirements
+
+- 1 Cluster to act as the Observability Cluster
+- 1 Cluster to act as a Downstream Cluster
+- Ability to install helm charts
+- The envoy helm chart must be installed to an edge node (typically where an ingress instance would be deployed)
+
+### Deploy Prometheus with Thanos Sidecar
 
 It is recommended you use the same namespace like `monitoring` for the deployment of Prometheus and Atlas.
 
-How you deploy Prometheus with the Thanos Sidecar is up to you, however I would recommend simply using the [kube-prometheus-stack]() helm chart as it makes this process very simple and takes care of the more complicated bits for you. If you want Thanos persisting to S3 you can pass your S3 credentials along as well.
+How you deploy Prometheus with the Thanos Sidecar is up to you, however I would recommend simply using the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) helm chart as it makes this process very simple and takes care of the more complicated bits for you. If you want Thanos persisting to S3 you can pass your S3 credentials along as well.
+
+!!! note
+    When using `kube-prometheus-stack` ensure `servicePerReplica` is enabled for both prometheus and alertmanager sections, this will allow proper routing to each individual instance.
 
 Once you have your Prometheus instances deployed, please make sure to note the service name as it will be necessary for configuring Atlas properly. If you are use `kube-prometheus-stack` most of the defaults will work out of the box. If you are using something non-standard, please make sure that the Prometheus Port and Thanos Sidecar ports are on the service.
 
@@ -117,7 +130,7 @@ spec:
 atlas cluster-add --name "downstream1" --replicas 1 --external-ip "1.1.1.1" 
 ```
 
-### Step 4. Deploy Envoy on Downstream Cluster
+## Step 4. Deploy Envoy on Downstream Cluster
 
 Atlas generates helm values for the Atlas Envoy Helm Chart for every downstream cluster added. These values come with the necessary seed values to allow initial secure connections to be established. Once comms are established the Envoy Aggreggated Discovery capabilites take over ensuring the downstream envoy instance stays configure properly.
 
@@ -126,6 +139,12 @@ Retrieve the downstream's helm values with the `atlas` or `kubectl`
 ```bash
 atlas cluster-values --name "downstream1" > downstream1.yaml
 ```
+
+**Note:** This command has `--format` option, the default is `raw` which is just values for helm. The other options are `helm-chart` and `helm-release`
+
+- `helm-chart` -- this is a feature from Rancher on K3S clusters
+- `helm-release` -- this is for Flux V2
+- `raw` -- just values for helm install/upgrade commands
 
 OR
 
@@ -139,18 +158,26 @@ Once you have the values, install helm on your downstream cluster. Make sure you
 helm install envoy --values downstream1.yaml chart/
 ```
 
-Once complete, this envoy proxy will come online and configure itself automatically.
-
-### Step 5. Repeat
+## Step 5. Repeat
 
 If you have more than one downstream cluster, repeast steps 3 and 4 until you've added all your clusters.
 
-1. Deploy Atlas with Helm
-2. Modify `kube-system/coredns` configmap (ideally with giops) to forward altas TLD to atlas coredns server
-3. Generate Downstream Envoy Helm Values
-4. Deploy Downstream Envoy Helm Chart
-5. Deploy Downstream Prometheus
-6. Create Service for Downstream Cluster in Observability Cluster
-7. Sit back and enjoy the metrics flowing in!
+## Step 6. Configure Downstream Prometheus for Observability Alertmanagers
 
-**Note:** when using `kube-prometheus-stack` ensure `servicePerReplica` is enabled for both prometheus and alertmanager sections.
+To take full advantage of what Atlas offers, you can configure your downstream prometheus instances to talk to the alertmanagers in the observability cluster.
+
+You'll need to add an alertmanager entry per the number of alertmanagr instances that are on the observability cluster to the downstream prometheus instance. If you are using the prometheus operator then you can simple add an additional alert managers configuration like the following.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: additional-alertmanager-configs
+  namespace: monitoring
+data:
+  config.yaml: |
+    - scheme: http
+      static_configs:
+      - targets:
+        - %s
+```

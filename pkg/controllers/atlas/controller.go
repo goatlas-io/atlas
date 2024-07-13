@@ -28,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
@@ -36,8 +37,9 @@ import (
 	core "github.com/rancher/wrangler/pkg/generated/controllers/core/v1"
 	"github.com/rancher/wrangler/pkg/relatedresource"
 
-	"github.com/ekristen/atlas/pkg/common"
-	"github.com/ekristen/atlas/pkg/config"
+	"github.com/goatlas-io/atlas/pkg/common"
+	"github.com/goatlas-io/atlas/pkg/config"
+	"github.com/goatlas-io/atlas/pkg/envoy"
 )
 
 //go:embed templates/*
@@ -64,6 +66,8 @@ type Controller struct {
 
 	dnsUpdateLock sync.Mutex
 	dnsLastHash   string
+
+	namespace string
 }
 
 func Register(
@@ -79,7 +83,7 @@ func Register(
 	c := Controller{
 		ctx:           ctx,
 		config:        config,
-		log:           log.WithField("component-type", "controller").WithField("component", common.MonitoringNamespace),
+		log:           log.WithField("component-type", "controller").WithField("component", cli.String("namespace")),
 		cli:           cli,
 		apply:         apply,
 		secrets:       secrets,
@@ -87,6 +91,7 @@ func Register(
 		configmaps:    configmaps,
 		services:      services,
 		servicesCache: services.Cache(),
+		namespace:     cli.String("namespace"),
 	}
 
 	c.secrets.OnChange(ctx, common.NAME, c.handleSecretChange)
@@ -171,7 +176,7 @@ func (c *Controller) createObservabilityValues() error {
 	s := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.ObservabilityEnvoyValuesSecretName,
-			Namespace: common.MonitoringNamespace,
+			Namespace: c.namespace,
 		},
 		StringData: map[string]string{
 			"values.yaml": string(buf.Bytes()),
@@ -244,7 +249,7 @@ func (c *Controller) configureCA() error {
 
 	var currentCASecret *corev1.Secret
 
-	caSecret, err := c.secrets.Get(common.MonitoringNamespace, common.CASecretName, metav1.GetOptions{})
+	caSecret, err := c.secrets.Get(c.namespace, common.CASecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			isNew = true
@@ -295,7 +300,7 @@ func (c *Controller) configureCA() error {
 		caSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        common.CASecretName,
-				Namespace:   common.MonitoringNamespace,
+				Namespace:   c.namespace,
 				Annotations: map[string]string{},
 				Labels: map[string]string{
 					common.IsCALabel:       "true",
@@ -370,7 +375,7 @@ func (c *Controller) configureCA() error {
 func (c *Controller) setupPKI() error {
 	doGenerate := false
 
-	ingressTLSSecret, err := c.secrets.Get(common.MonitoringNamespace, common.IngressTLSSecretName, metav1.GetOptions{})
+	ingressTLSSecret, err := c.secrets.Get(c.namespace, common.IngressTLSSecretName, metav1.GetOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	} else if err != nil && apierrors.IsNotFound(err) {
@@ -382,7 +387,7 @@ func (c *Controller) setupPKI() error {
 		}
 	}
 
-	mtlsClientSecret, err := c.secrets.Get(common.MonitoringNamespace, common.ClientSecretName, metav1.GetOptions{})
+	mtlsClientSecret, err := c.secrets.Get(c.namespace, common.ClientSecretName, metav1.GetOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	} else if err != nil && apierrors.IsNotFound(err) {
@@ -394,7 +399,7 @@ func (c *Controller) setupPKI() error {
 		}
 	}
 
-	mtlsServerSecret, err := c.secrets.Get(common.MonitoringNamespace, common.ServerSecretName, metav1.GetOptions{})
+	mtlsServerSecret, err := c.secrets.Get(c.namespace, common.ServerSecretName, metav1.GetOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	} else if err != nil && apierrors.IsNotFound(err) {
@@ -440,7 +445,7 @@ func (c *Controller) setupPKI() error {
 		ingressTLSSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      common.IngressTLSSecretName,
-				Namespace: common.MonitoringNamespace,
+				Namespace: c.namespace,
 				Labels: map[string]string{
 					common.IsCertLabel:    "true",
 					common.CASerialLabel:  fmt.Sprintf("%d", ingressSerial),
@@ -458,7 +463,7 @@ func (c *Controller) setupPKI() error {
 		mtlsClientSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      common.ClientSecretName,
-				Namespace: common.MonitoringNamespace,
+				Namespace: c.namespace,
 				Labels: map[string]string{
 					common.IsCertLabel:        "true",
 					common.CASerialLabel:      fmt.Sprintf("%d", clientSerial),
@@ -477,7 +482,7 @@ func (c *Controller) setupPKI() error {
 		mtlsServerSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      common.ServerSecretName,
-				Namespace: common.MonitoringNamespace,
+				Namespace: c.namespace,
 				Labels: map[string]string{
 					common.IsCertLabel:        "true",
 					common.CASerialLabel:      fmt.Sprintf("%d", serverSerial),
@@ -505,7 +510,7 @@ func (c *Controller) generateCert(extKeyUsage []x509.ExtKeyUsage, commonName str
 	serial := big.NewInt(time.Now().UTC().Unix())
 
 	subject := pkix.Name{
-		Organization:       []string{"ekristen.github.io"},
+		Organization:       []string{"goatlas.io"},
 		OrganizationalUnit: []string{"Atlas"},
 		Country:            []string{"US"},
 		Province:           []string{"DC"},
@@ -562,7 +567,7 @@ func (c *Controller) generateCA() (*big.Int, *bytes.Buffer, *bytes.Buffer, error
 	ca := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UTC().Unix()),
 		Subject: pkix.Name{
-			Organization:       []string{"ekristen.github.io"},
+			Organization:       []string{"goatlas.io"},
 			OrganizationalUnit: []string{"Atlas"},
 			Country:            []string{"US"},
 			Province:           []string{"DC"},
@@ -696,7 +701,7 @@ func (c *Controller) handleServiceChangeforDNS(key string, service *corev1.Servi
 	c.dnsUpdateLock.Lock()
 	defer c.dnsUpdateLock.Unlock()
 
-	monitoringNamespace := common.MonitoringNamespace
+	monitoringNamespace := c.namespace
 
 	requirement, err := labels.NewRequirement(common.SidecarLabel, selection.Exists, []string{})
 	if err != nil {
@@ -773,7 +778,7 @@ func (c *Controller) handleServiceChangeforDNS(key string, service *corev1.Servi
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      c.cli.String("dns-config-map-name"),
-			Namespace: common.MonitoringNamespace,
+			Namespace: c.namespace,
 		},
 		Data: map[string]string{
 			"atlas.zone": string(buf.Bytes()),
@@ -789,39 +794,54 @@ func (c *Controller) handleServiceChangeforDNS(key string, service *corev1.Servi
 }
 
 func (c *Controller) generateEnvoyValuesSecret(service *corev1.Service) (*corev1.Secret, error) {
-	ca, err := c.secretsCache.Get(common.MonitoringNamespace, common.CASecretName)
+	ca, err := c.secretsCache.Get(c.namespace, common.CASecretName)
 	if err != nil {
 		return nil, err
 	}
 
-	server, err := c.secretsCache.Get(common.MonitoringNamespace, common.ServerSecretName)
+	server, err := c.secretsCache.Get(c.namespace, common.ServerSecretName)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := c.secretsCache.Get(common.MonitoringNamespace, common.ClientSecretName)
+	client, err := c.secretsCache.Get(c.namespace, common.ClientSecretName)
 	if err != nil {
 		return nil, err
+	}
+
+	actualAMServices := []*corev1.Service{}
+	amServices, err := c.services.List(c.namespace, v1.ListOptions{
+		LabelSelector: c.cli.String("alertmanager-selector"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, service := range amServices.Items {
+		if _, ok := service.Spec.Selector["statefulset.kubernetes.io/pod-name"]; ok {
+			actualAMServices = append(actualAMServices, &service)
+		}
 	}
 
 	data := struct {
-		CA              string
-		ServerCert      string
-		ServerKey       string
-		ClientCert      string
-		ClientKey       string
-		ClusterID       string
-		EnvoyADSAddress string
-		EnvoyADSPort    int64
+		CA                string
+		ServerCert        string
+		ServerKey         string
+		ClientCert        string
+		ClientKey         string
+		ClusterID         string
+		EnvoyADSAddress   string
+		EnvoyADSPort      int64
+		AlertmanagerCount int
 	}{
-		CA:              string(ca.Data["ca.pem"]),
-		ServerCert:      string(server.Data["tls.crt"]),
-		ServerKey:       string(server.Data["tls.key"]),
-		ClientCert:      string(client.Data["tls.crt"]),
-		ClientKey:       string(client.Data["tls.key"]),
-		ClusterID:       service.Name,
-		EnvoyADSAddress: c.config.ADSAddress,
-		EnvoyADSPort:    c.config.ADSPort,
+		CA:                string(envoy.CombineCAs(ca)),
+		ServerCert:        string(server.Data["tls.crt"]),
+		ServerKey:         string(server.Data["tls.key"]),
+		ClientCert:        string(client.Data["tls.crt"]),
+		ClientKey:         string(client.Data["tls.key"]),
+		ClusterID:         service.Name,
+		EnvoyADSAddress:   c.config.ADSAddress,
+		EnvoyADSPort:      c.config.ADSPort,
+		AlertmanagerCount: len(actualAMServices),
 	}
 
 	d, err := templates.ReadFile("templates/envoy-downstream.tmpl")
@@ -847,7 +867,7 @@ func (c *Controller) generateEnvoyValuesSecret(service *corev1.Service) (*corev1
 	s := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: common.MonitoringNamespace,
+			Namespace: c.namespace,
 		},
 		StringData: map[string]string{
 			"values.yaml": string(buf.Bytes()),

@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/ekristen/atlas/pkg/common"
+	"github.com/goatlas-io/atlas/pkg/common"
 )
 
 //go:embed templates/*

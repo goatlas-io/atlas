@@ -2,6 +2,11 @@
 vendor
 hack/deployment/**/*.json
 hack/deployment/**/*.yaml
+examples/demo*/**/*.json
+examples/demo*/**/*.yaml
+charts/**/*.tgz
+release
+archive
 
 # Files
 .envrc
@@ -10,5 +15,5 @@ test-*.yaml
 chart/charts/*.tgz
 droplet.json
 envoy-values.yaml
-archive
 helm-values.yaml
+*.bak

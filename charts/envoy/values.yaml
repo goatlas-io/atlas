@@ -17,7 +17,7 @@ strategy: |
 
 image:
   repository: envoyproxy/envoy
-  tag: v1.18.3
+  tag: v1.35.0
   pullPolicy: IfNotPresent
 
 command:
